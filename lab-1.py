@@ -62,7 +62,7 @@
 # ### Solutions
 # ---
 
-# In[148]:
+# In[3]:
 
 
 import numpy as np
@@ -72,7 +72,7 @@ import matplotlib.axes as axes
 get_ipython().run_line_magic('matplotlib', 'inline')
 
 
-# In[177]:
+# In[183]:
 
 
 N = 20
@@ -87,7 +87,7 @@ w = nla.inv(X_train.T.dot(X_train)).dot(X_train.T).dot(Y_train)
 # Let us plot data and model's prediction:
 # 
 
-# In[178]:
+# In[184]:
 
 
 plt.figure(figsize=(7, 4))
@@ -101,17 +101,25 @@ plt.legend(loc='best')
 
 # Clearly, our model is far from perfect. Let's add polynomial features and plot the new advanced model:
 
-# In[179]:
+# In[145]:
 
 
-X_train_adv = x_values
-for i in (2, 3):
-    X_train_adv = np.concatenate((X_train_adv, x_values**i), axis=1)
-X_train_adv = np.concatenate((X_train_adv, np.ones((N, 1))), axis=1)
+def MakePolyMatrix(x_data, degree):
+    x_matrix = x_data
+    for i in range(2, degree + 1):
+        x_matrix = np.concatenate((x_matrix, x_data**i), axis=1)
+    x_matrix = np.concatenate((x_matrix, np.ones((x_data.shape[0], 1))), axis=1)
+    return x_matrix
+
+
+# In[185]:
+
+
+X_train_adv = MakePolyMatrix(x_values, 3)
 w_adv = nla.inv(X_train_adv.T.dot(X_train_adv)).dot(X_train_adv.T).dot(Y_train)
 
 
-# In[196]:
+# In[198]:
 
 
 def f_adv(x, coef):
@@ -121,7 +129,7 @@ def f_adv(x, coef):
     while i < coef_.size - 1:
         y += coef_[i] * x**(i + 1)
         i += 1
-    y += coef_[coef_.size - 1]
+    y += coef_[i]
     return y
     
 plt.figure(figsize=(7, 4))
@@ -139,30 +147,28 @@ plt.legend(loc='best')
 # As can be seen from the plot, such a model provides much better solution in comparison with a primitive one.
 # Let's see, what happens when a lot more feautures are added.
 
-# In[190]:
+# In[187]:
 
 
-X_adv_plus = x_values
-for i in range(2, 7 + 1):
-    X_adv_plus = np.concatenate((X_adv_plus, x_values**i), axis=1)
-X_adv_plus = np.concatenate((X_adv_plus, np.ones((N, 1))), axis=1)
+X_adv_plus = MakePolyMatrix(x_values, 7)
 w_adv_plus = nla.inv(X_adv_plus.T.dot(X_adv_plus)).dot(X_adv_plus.T).dot(Y_train)
 
 
-# In[197]:
+# In[199]:
 
 
 plt.figure(figsize=(7, 4))
-plt.title('Model with the polynomial features')
+plt.title('Model with polynomial features up to the 7th')
 plt.xlabel('x')
 plt.ylabel('y')
 plt.plot(x_values, y_values, 'k^', label='generated data')
 y_space = [f_adv(x, w_adv_plus) for x in x_space]
 plt.plot(x_space, y_space, 'r', label='model prediction')
+plt.axis((0 - 0.1, 2*np.pi + 0.1, -2, 2))
 plt.legend(loc='best')
 
 
-# At first sight, this model predicts the function even better. However, extending the list of features might lead to overfitting (we see the unnatural behaviour at the ends of the interval $[0, 2\pi]$) and result in huge errors on test datasets.
+# At first sight, this model predicts the function even better. However, extending the list of features might lead to overfitting (we see the unnatural behaviour at the ends of the interval $[0, 2\pi]$) and result in huge errors on test (or validation) datasets. Let's show that.
 
 # ### 3. Validation
 # The data used to build the final model usually comes from multiple datasets. In particular, three data sets are commonly used in different stages of the creation of the model.
@@ -175,7 +181,7 @@ plt.legend(loc='best')
 # 
 # Cross-validation is a validation technique for estimating how accurately a predictive model will perform in practice. The goal of cross validation is to limit problems like overfitting, give an insight on how the model will generalize to an independent dataset.
 # 
-# Cross-validation involves partitioning a sample of data into complementary subsets, performing the analysis on one subset and making validation on the other. To reduce variability, multiple rounds of cross-validation are performed using different partitions, and the validation results are caveraged over the rounds to estimate a final predictive model.
+# Cross-validation involves partitioning a sample of data into complementary subsets, performing the analysis on one subset and making validation on the other. To reduce variability, multiple rounds of cross-validation are performed using different partitions, and the validation results are averaged over the rounds to estimate a final predictive model.
 # 
 # There are following types:
 # 1. Leave-p-out cross-validation - using p observations as the validation set with all possible ways.
@@ -188,6 +194,57 @@ plt.legend(loc='best')
 # 2. Check quality of your model on train set and validation set.
 # 3. Have you experienced [overfitting](https://en.wikipedia.org/wiki/Overfitting)?
 # 4. Please, read [this article](https://en.wikipedia.org/wiki/VC_dimension) to learn more about model capacity and VC-dimension.
+
+# ### Solutions
+# ---
+# 
+# Let's generate validation samples and plot them along with the previously generated train ones.
+
+# In[190]:
+
+
+eps = np.random.normal(loc=0, scale=0.1, size=(N, 1))
+x_valid = np.random.random((N, 1)) * 2 * np.pi
+y_valid = np.sin(x_valid) + eps
+
+
+# In[191]:
+
+
+plt.figure(figsize=(7, 4))
+plt.title('Train and validation samples')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.plot(x_values, y_values, 'k^', label='train samples')
+plt.plot(x_valid, y_valid, 'r.', label='validation samples')
+plt.legend(loc='best')
+
+
+# Let's check quality of model with poly features: $x^2, x^3$.
+
+# In[200]:
+
+
+def MSE(model, x_matrix_data, y_matrix_data):
+    squared_error = (x_matrix_data.dot(model) - y_matrix_data)**2
+    squared_error = squared_error.reshape(squared_error.shape[0])
+    mean_error = squared_error.sum(axis=0) / squared_error.shape[0]
+    return mean_error
+
+print("MSE on train dataset:", MSE(w_adv, X_train_adv, Y_train))
+print("MSE on validation dataset:", MSE(w_adv, MakePolyMatrix(x_valid, 3), y_valid))
+
+
+# The error appears to be quite small and approximately the same on both datasets. Let's check what happens with "super advanced" model with poly features up to the $x^7$ and whether it's overfitted or not.
+
+# In[201]:
+
+
+print("MSE on train dataset:", MSE(w_adv_plus, X_adv_plus, Y_train))
+print("MSE on validation dataset:", MSE(w_adv_plus, MakePolyMatrix(x_valid, 7), y_valid))
+
+
+# And there it is, overfitting appears. It's easy to notice the reason for that: some validation samples are located beyond the interval which holds the training dataset: those three points close to $2\pi$. As we have already seen, the predicted function goes overwhelmingly downward, which leads to such a big error. Apart from the big value, it means that our model is too complicated and in need of adjustment. 
 
 # ### 4. Binary linear classification
 # Let $\mathbb{Y} = \{-1, +1\}$ for binary classification. So linear model looks like
