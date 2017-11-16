@@ -62,7 +62,7 @@
 # ### Solutions
 # ---
 
-# In[3]:
+# In[2]:
 
 
 import numpy as np
@@ -265,7 +265,7 @@ print("MSE on validation dataset:", MSE(w_adv_plus, MakePolyMatrix(x_valid, 7), 
 # $$\ln \big( 1 + \exp(-yw^Tx) \big)$$
 
 # #### Exercises
-# 1. Let $\mathbb{P}\{y=1|x\} = \sigma(wx)$, where $\sigma(z) = \frac{1}{1 + \exp(-z)}$. Show that problem below it is nothing like the maximization of the likelihood.
+# 1. Let $\mathbb{P}\{y=1|x\} = \sigma(w^Tx)$, where $\sigma(z) = \frac{1}{1 + \exp(-z)}$. Show that problem below it is nothing like the maximization of the likelihood.
 # $$\arg\min_{w}Q(w) = \arg\min_{w} \sum_{x, y} \ln \big(1 + \exp(-yw^Tx )) \big)$$
 # 2. Plot all loss functions in the axes $M \times L$.
 # 3. Generate two normally distributed sets of points on the plane.
@@ -273,6 +273,133 @@ print("MSE on validation dataset:", MSE(w_adv_plus, MakePolyMatrix(x_valid, 7), 
 # 5. Train linear classifier with MSE (use analytical solution), which splits these sets.
 # 6. Plot points and separating line of trained classifier.
 # 7. What is time comlexity of your solution?
+
+# ### Solutions
+# ---
+# 
+# #### 1.
+# The conditional probability that label is "1" if the object is x is the following:
+# $$\mathbb{P}\{y=1 \mid x\} = \frac{1}{1 + e^{-w^Tx}}$$
+# 
+# Thus, the probability that the object has label "-1" is:
+# $$\mathbb{P}\{y= -1\mid x\} = 1 - \frac{1}{1 + e^{-w^Tx}} = \frac{e^{-w^Tx}}{1 + e^{-w^Tx}} = \frac{1}{e^{w^Tx}+1}$$
+# 
+# Now, let's define the likelihood function as $\mathbb{L}(w, X^l) = \mathbb{P}(y_1 = y_{t_1}, \dots, y_l = y_{t_l} \mid x_1, \dots, x_l)$, where $y_{t_i}$ is the true label of i-th object.
+# 
+# Since all the samples in train dataset are independent from each other, we can rewrite it as
+# $$\mathbb{L}(w, X^l) = \prod_{i=1}^l{\mathbb{P}(y_i = y_{i_t} \mid x_i)} = \prod_{i: y_i = 1}{\mathbb{P}(y_i = 1\mid x_i)} \prod_{i: y_i = -1}{\mathbb{P}(y_i = -1\mid x_i)}$$
+# 
+# Because the logarithm is a monotonically increasing function, the logarithm of a function achieves its maximum value at the same points as the function itself, so let's turn to $\ln{\mathbb{L}(w, X^l)}$:
+# 
+# $$\ln{\mathbb{L}(w, X^l)} = \ln \prod_{i: y_i = 1}{\mathbb{P}(y_i = 1\mid x_i)} + \ln \prod_{i: y_i = -1}{\mathbb{P}(y_i = -1\mid x_i)} = $$
+# 
+# $$ = \sum_{i: y_i = 1}{\ln \mathbb{P}(y_i = 1\mid x_i)} + \sum_{i: y_i = -1}{\ln \mathbb{P}(y_i = -1\mid x_i)} $$
+# 
+# Now, it's clear that the maximization of $\ln{\mathbb{L}(w, X^l)}$ is the same as the minimazition of $-\ln{\mathbb{L}(w, X^l)}$, so we turn to the last problem. Since $\ln \frac{1}{1 + t} = -\ln (1+t)$, we have the following:
+# 
+# $$-\ln{\mathbb{L}(w, X^l)} = \sum_{i: y_i = 1}{\ln (1 + e^{-w^Tx})} + \sum_{i: y_i = -1}{\ln (1 + e^{w^Tx})} = \sum_{i}{\ln (1 + e^{-yw^Tx})} $$
+# 
+# Which shows, that in order to maximize $\mathbb{P}\{y=1 \mid x\}$ we need to find $w$ such that it minimizes $\sum_{i}{\ln (1 + e^{-yw^Tx})}$, therefore to solve the problem
+# 
+# $$\arg\min_{w}Q(w) = \arg\min_{w} \sum_{x, y} \ln \big(1 + \exp(-yw^Tx )) \big)$$
+
+# #### 2.
+# Since $M = yw^Tx$ we can rewrite the loss functions in the following way:
+# 
+#  $$MSE: L = (M-1)^2$$
+#  $$Hinge: L = max (0, 1-M)$$
+#  $$Log loss: L = \ln (1+e^{-M})$$
+
+# In[26]:
+
+
+x_space = np.linspace(-2, 2, 100)
+mse_loss = [(x - 1)**2 for x in x_space]
+hinge_loss = [max(0, 1-x) for x in x_space]
+log_loss = [np.log(1 + np.exp(-x)) for x in x_space]
+x_basic = [-2, 0, 0, 2]
+basic_loss = [1, 1, 0, 0]
+
+plt.figure(figsize=(8, 5))
+plt.axis((-1.5, 2, -0.5, 2))
+plt.grid(True)
+plt.title('Loss functions')
+plt.xlabel('M')
+plt.ylabel('L')
+plt.plot()
+plt.plot(x_space, mse_loss, 'k', label='MSE loss')
+plt.plot(x_space, hinge_loss, 'r', label='Hinge loss')
+plt.plot(x_space, log_loss, 'b', label='Log loss')
+plt.plot(x_basic, basic_loss, 'm', label='[M < 0]')
+plt.legend(loc='best')
+plt.show()
+
+
+# #### 3.
+# Let's try to use MSE loss function and already known analytical solution so as to train classifier.
+# Firstly, we will generate two sets of points, normally distibuted.
+
+# In[75]:
+
+
+set_size = 500
+mean_blue = np.array([-1, -1])
+mean_red = np.array([1, 1])
+cov_array = np.array([[0.5, 0], [0, 0.5]])
+blue_points = np.random.multivariate_normal(mean=mean_blue, cov=cov_array, size=set_size)
+red_points = np.random.multivariate_normal(mean=mean_red, cov=cov_array, size=set_size)
+plt.grid(True)
+plt.scatter(blue_points[:,0], blue_points[:, 1], c='b', alpha=0.5, label='-1')
+plt.scatter(red_points[:, 0], red_points[:, 1], c='r', alpha=0.5, label='+1')
+plt.legend(loc='best')
+plt.show()
+
+
+# Let's construct matrix $X$, which represents two features of every point: $x$- and $y$- coordinate and matrix $Y$, which shows the class each point belongs to.
+
+# In[76]:
+
+
+X_train = np.concatenate((red_points, blue_points), axis=0)
+X_train = np.concatenate((X_train, np.ones((2 * set_size, 1))), axis=1)
+Y_train = np.concatenate((np.ones((set_size, 1)), -np.ones((set_size, 1))), axis=0)
+w = nla.inv(X_train.T.dot(X_train)).dot(X_train.T).dot(Y_train)
+print(w)
+
+
+# As we know, $w$ contains the coordinates of normal vector to the separating hyperplane and coefficient $b$. So we can construct the plane itself (in our example it will be the line).
+# $$w^Tx = 0$$
+# $$w_0x_0 + w_1x_1 + w_2 = 0$$
+# $$x_1 = -\frac{w_2}{w_1} -\frac{w_0}{w_1}x_0$$
+
+# In[77]:
+
+
+def Yvalue(normal, x):
+    c = normal[2] / normal[1]
+    b = normal[0] / normal[1]
+    return - c - b * x
+
+x_line = np.linspace(-3, 3, 100)
+y_line = [Yvalue(w, x) for x in x_line]
+
+plt.figure(figsize=(7, 5))
+plt.grid(True)
+plt.scatter(blue_points[:,0], blue_points[:, 1], c='b', alpha=0.5, label='-1')
+plt.scatter(red_points[:, 0], red_points[:, 1], c='r', alpha=0.5, label='+1')
+plt.plot(x_line, y_line, 'k', label = 'separating line')
+plt.legend(loc='best')
+plt.show()
+
+
+# #### 7.
+# Let's calculate the complexity of our solution. Recall that all we have to do is to find $w$ in the following way:
+# $$w = (X^TX)^{-1}X^TY$$, where $X$ has a shape of $(l, n + 1)$ and $Y$ - $(l, 1)$, $n$ is the dimension of space.
+# 
+# $X^T$ is computed in $O(l(n+1))$ time. The multiplication $X^TX$ takes $O((n+1)^2l) = O(n^2l)$. Computation of the inverse of $X^TX$ requires $O(n^3)$ time. The subsequent multiplication $(X^TX)^{-1}X^T$ takes $O(l(n+1) \times (n+1))$. And the last product is computed in $O(l(n+1))$.
+# 
+# Thus, we can compute the time complexity of the solution:
+# $$O(ln+l) + O(ln^2) + O(n^3)+ O(ln^2+ln) + O(ln+l) = O(n^3) + O(ln^2) = O(n^3 + ln^2)$$
 
 # ### 5. Gradient descent
 # Gradient descent is a first-order iterative optimization algorithm for finding the minimum of a function. To find a local minimum of a function using gradient descent, one takes steps proportional to the negative of the gradient of the function at the current point. Gradient descent is based on the observation that if function $Q(x)$ is defined and differentiable in a neighborhood of a point $x$, then $Q(x)$ decreases fastest if one goes from $x$  in the direction of the negative gradient.
