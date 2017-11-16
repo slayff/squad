@@ -62,7 +62,7 @@
 # ### Solutions
 # ---
 
-# In[2]:
+# In[15]:
 
 
 import numpy as np
@@ -416,11 +416,13 @@ plt.show()
 # 5. How do you choose $\lambda$?
 # 6. Evaluate time complexity of solution.
 
+# ### Solutions
+# ---
 # Let's take the following function: 
 # $$f(x, y) = 3x^2+xy+2y^2-x-4y$$
-# though it isn't obvios, this function has a global minimum of -2 at $(x, y) = (0, 1)$. Let's have a look at the plot itself.
+# though it isn't obvious, this function has a global minimum of -2 at $(x, y) = (0, 1)$. Let's have a look at the plot itself.
 
-# In[99]:
+# In[337]:
 
 
 from mpl_toolkits.mplot3d import Axes3D
@@ -446,7 +448,7 @@ surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
 # x+4y-4
 # \end{pmatrix}$$
 
-# In[101]:
+# In[338]:
 
 
 def FindGradient(point2D):
@@ -457,7 +459,7 @@ def FindGradient(point2D):
     return [x_derivative, y_derivative]
 
 
-# In[102]:
+# In[339]:
 
 
 def FunctionValue(point2D):
@@ -466,45 +468,90 @@ def FunctionValue(point2D):
     return 3*x**2 + x*y + 2*y**2 - x - 4*y
 
 
-# In[127]:
+# In[340]:
 
 
-def GradientDescent(init_point, lambda_, eps=1e-9):
+def GradientDescent(init_point, value_func, gradient_func, lambda_,
+                    max_iter_num=-1, loss_eps=1e-9):
     cur_point = init_point
     cur_value = FunctionValue(init_point)
     extremum_found = False
     path = []
-    while not extremum_found:
+    while not extremum_found and max_iter_num != 0:
         path.append(cur_point)
-        x_deriv, y_deriv = FindGradient(cur_point)
+        x_deriv, y_deriv = gradient_func(cur_point)
         x_new = cur_point[0] - lambda_ * x_deriv
         y_new = cur_point[1] - lambda_ * y_deriv
         new_point = [x_new, y_new]
-        if (abs(FunctionValue(new_point) - FunctionValue(cur_point)) < eps):
+        if (abs(FunctionValue(new_point) - value_func(cur_point)) < loss_eps):
             extremum_found = True
             break
         cur_point = new_point
-    return cur_point, path
+        if max_iter_num > 0:
+            max_iter_num -= 1
+    return cur_point, np.array(path)
 
 
-# In[160]:
+# In[341]:
 
 
-extremum, route = GradientDescent([-3, -3], 0.01)
+extremum, route = GradientDescent([-3, -3], FunctionValue,
+                                  FindGradient, 0.05)
 print(extremum)
 
 
 # As we can see, the point found by `GradientDescent` doesn't differ much from $(0, 1)$. Let's plot contour lines and trace the descent path.
 
-# In[172]:
+# In[342]:
 
 
 fig = plt.figure(figsize=(7, 5))
-CS = plt.contourf(X, Y, Z, 20)
+plt.title('Contour plot')
+plt.contourf(X, Y, Z, 30)
+plt.plot(route[:, 0], route[:, 1], 'ro', ms=3, label='descent path')
 plt.xlabel('x')
 plt.ylabel('y')
+plt.legend(loc='best')
 plt.show()
 
+
+# #### 5.
+# The choice of $\lambda$ may be based on some figures while experimenting:
+
+# In[343]:
+
+
+# warning: the following code goes to infinite loop
+# extremum1, route1 = GradientDescent([-3, -3], FunctionValue,
+#                                  FindGradient, 1)
+extremum1, route1 = GradientDescent([-3, -3], FunctionValue,
+                                 FindGradient, 1, max_iter_num=1000)
+print(route1[:10])
+
+
+# It is clear that when $\lambda \geq 1$ the algorithm doesn't converge: on each step the function value only increases. When setting $\lambda$ to rather small value, the iteration number increases significantly: 
+
+# In[344]:
+
+
+extremum2, route2 = GradientDescent([-3, -3], FunctionValue,
+                                 FindGradient, 0.00001)
+print('Steps number:', route2.shape[0])
+
+
+# So the possible approach could be bounding the maximum iteration limit to around 2000-3000 and choosing $\lambda \approx 0.1-0.01$. 
+
+# In[345]:
+
+
+extremum3, route3 = GradientDescent([-3, -3], FunctionValue,
+                                 FindGradient, 0.01, max_iter_num=3000)
+print(extremum3)
+print('Steps number:', route3.shape[0])
+
+
+# #### 6.
+# TO BE DONE: evaluate time complexity
 
 # There is category of function which naive gradient descent works poorly for, e.g. [Rosenbrock function](https://en.wikipedia.org/wiki/Rosenbrock_function).
 # $$f(x, y) = (1-x)^2 + 100(y-x^2)^2.$$
@@ -513,6 +560,86 @@ plt.show()
 # 1. Repeat previous steps for Rosenbrock function.
 # 2. What problem do you face?
 # 3. Is there any solution?
+
+# ### Solutions
+# ---
+# 
+# Let's firstly plot the function itself:
+
+# In[346]:
+
+
+fig = plt.figure(figsize=(8, 5))
+ax = fig.add_subplot(111, projection='3d')
+
+X = np.linspace(-1, 1, 200)
+Y = np.linspace(-1, 1, 200)
+X, Y = np.meshgrid(X, Y)
+Z = (1 - X)**2 + 100*(Y - X**2)**2
+plt.xlabel('x')
+plt.ylabel('y')
+plt.title('Rosenbrock function')
+surf = ax.plot_surface(X, Y, Z, cmap=cm.ocean, antialiased=True)
+
+
+# Let's find the gradient vector in some point $(x, y)$:
+# $$\triangledown f(x, y) = \begin{pmatrix}
+# 2(x-1)+400(x^2-y)x\\
+# 200(y-x^2)
+# \end{pmatrix}$$
+
+# In[347]:
+
+
+def RosenbrockGradient(point2D):
+    x = point2D[0]
+    y = point2D[1]
+    x_derivative = 2*(x - 1) + 400*(x**2 - y)*x
+    y_derivative = 200*(y - x**2)
+    return [x_derivative, y_derivative]
+
+
+# In[348]:
+
+
+def RosenbrockValue(point2D):
+    x = point2D[0]
+    y = point2D[1]
+    return (1 - x)**2 + 100*(y - x**2)**2
+
+
+# In[349]:
+
+
+def InitRandomPoint(boundary):
+    return np.random.uniform(-boundary, boundary, 2)
+
+
+# In[360]:
+
+
+random_point = InitRandomPoint(1)
+extremum, route = GradientDescent(random_point,
+                                  RosenbrockValue, RosenbrockGradient,
+                                  0.001, max_iter_num=100000)
+print(extremum)
+print('Iterations number:', route.shape[0])
+
+
+# In[363]:
+
+
+fig = plt.figure(figsize=(7, 5))
+plt.title('Contour plot')
+plt.contourf(X, Y, Z, 40)
+plt.plot(route[:, 0], route[:, 1], 'ro', ms=2, label='descent path')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.legend(loc='best')
+plt.show()
+
+
+# By plotting contour lines we can see the problem. On its very first steps the algorithm goes at right angle to the contour line. But then something strange happens...(to be continued)
 
 # There are some variations of the method, for example steepest descent, where we find optimal $\lambda$ for each step.
 # $$\lambda^{k} = \arg\min_{\lambda}Q(x_k - \lambda\triangledown Q(x_k)).$$
