@@ -416,6 +416,96 @@ plt.show()
 # 5. How do you choose $\lambda$?
 # 6. Evaluate time complexity of solution.
 
+# Let's take the following function: 
+# $$f(x, y) = 3x^2+xy+2y^2-x-4y$$
+# though it isn't obvios, this function has a global minimum of -2 at $(x, y) = (0, 1)$. Let's have a look at the plot itself.
+
+# In[99]:
+
+
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
+fig = plt.figure(figsize=(7, 5))
+ax = fig.add_subplot(111, projection='3d')
+
+X = np.linspace(-3, 3, 100)
+Y = np.linspace(-3, 3, 100)
+X, Y = np.meshgrid(X, Y)
+Z = X**2 + X*Y + 2*Y**2 - X - 4*Y
+plt.xlabel('x')
+plt.ylabel('y')
+surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
+                       linewidth=0, antialiased=True)
+
+
+# Now we are ready to find the minimum (basically, the local one, which luckily coincides with the global one) with the help of gradient descent.
+# 
+# Let's find the gradient vector in some point $(x, y)$:
+# $$\triangledown f(x, y) = \begin{pmatrix}
+# 6x+y-1\\
+# x+4y-4
+# \end{pmatrix}$$
+
+# In[101]:
+
+
+def FindGradient(point2D):
+    x = point2D[0]
+    y = point2D[1]
+    x_derivative = 6 * x + y - 1
+    y_derivative = x + 4*y - 4
+    return [x_derivative, y_derivative]
+
+
+# In[102]:
+
+
+def FunctionValue(point2D):
+    x = point2D[0]
+    y = point2D[1]
+    return 3*x**2 + x*y + 2*y**2 - x - 4*y
+
+
+# In[127]:
+
+
+def GradientDescent(init_point, lambda_, eps=1e-9):
+    cur_point = init_point
+    cur_value = FunctionValue(init_point)
+    extremum_found = False
+    path = []
+    while not extremum_found:
+        path.append(cur_point)
+        x_deriv, y_deriv = FindGradient(cur_point)
+        x_new = cur_point[0] - lambda_ * x_deriv
+        y_new = cur_point[1] - lambda_ * y_deriv
+        new_point = [x_new, y_new]
+        if (abs(FunctionValue(new_point) - FunctionValue(cur_point)) < eps):
+            extremum_found = True
+            break
+        cur_point = new_point
+    return cur_point, path
+
+
+# In[160]:
+
+
+extremum, route = GradientDescent([-3, -3], 0.01)
+print(extremum)
+
+
+# As we can see, the point found by `GradientDescent` doesn't differ much from $(0, 1)$. Let's plot contour lines and trace the descent path.
+
+# In[172]:
+
+
+fig = plt.figure(figsize=(7, 5))
+CS = plt.contourf(X, Y, Z, 20)
+plt.xlabel('x')
+plt.ylabel('y')
+plt.show()
+
+
 # There is category of function which naive gradient descent works poorly for, e.g. [Rosenbrock function](https://en.wikipedia.org/wiki/Rosenbrock_function).
 # $$f(x, y) = (1-x)^2 + 100(y-x^2)^2.$$
 # 
