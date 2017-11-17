@@ -62,7 +62,7 @@
 # ### Solutions
 # ---
 
-# In[15]:
+# In[1]:
 
 
 import numpy as np
@@ -422,7 +422,7 @@ plt.show()
 # $$f(x, y) = 3x^2+xy+2y^2-x-4y$$
 # though it isn't obvious, this function has a global minimum of -2 at $(x, y) = (0, 1)$. Let's have a look at the plot itself.
 
-# In[337]:
+# In[17]:
 
 
 from mpl_toolkits.mplot3d import Axes3D
@@ -448,7 +448,7 @@ surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
 # x+4y-4
 # \end{pmatrix}$$
 
-# In[338]:
+# In[18]:
 
 
 def FindGradient(point2D):
@@ -459,7 +459,7 @@ def FindGradient(point2D):
     return [x_derivative, y_derivative]
 
 
-# In[339]:
+# In[12]:
 
 
 def FunctionValue(point2D):
@@ -468,7 +468,7 @@ def FunctionValue(point2D):
     return 3*x**2 + x*y + 2*y**2 - x - 4*y
 
 
-# In[340]:
+# In[19]:
 
 
 def GradientDescent(init_point, value_func, gradient_func, lambda_,
@@ -483,7 +483,7 @@ def GradientDescent(init_point, value_func, gradient_func, lambda_,
         x_new = cur_point[0] - lambda_ * x_deriv
         y_new = cur_point[1] - lambda_ * y_deriv
         new_point = [x_new, y_new]
-        if (abs(FunctionValue(new_point) - value_func(cur_point)) < loss_eps):
+        if (abs(value_func(new_point) - value_func(cur_point)) < loss_eps):
             extremum_found = True
             break
         cur_point = new_point
@@ -492,7 +492,7 @@ def GradientDescent(init_point, value_func, gradient_func, lambda_,
     return cur_point, np.array(path)
 
 
-# In[341]:
+# In[20]:
 
 
 extremum, route = GradientDescent([-3, -3], FunctionValue,
@@ -502,7 +502,7 @@ print(extremum)
 
 # As we can see, the point found by `GradientDescent` doesn't differ much from $(0, 1)$. Let's plot contour lines and trace the descent path.
 
-# In[342]:
+# In[21]:
 
 
 fig = plt.figure(figsize=(7, 5))
@@ -518,7 +518,7 @@ plt.show()
 # #### 5.
 # The choice of $\lambda$ may be based on some figures while experimenting:
 
-# In[343]:
+# In[22]:
 
 
 # warning: the following code goes to infinite loop
@@ -531,7 +531,7 @@ print(route1[:10])
 
 # It is clear that when $\lambda \geq 1$ the algorithm doesn't converge: on each step the function value only increases. When setting $\lambda$ to rather small value, the iteration number increases significantly: 
 
-# In[344]:
+# In[23]:
 
 
 extremum2, route2 = GradientDescent([-3, -3], FunctionValue,
@@ -541,7 +541,7 @@ print('Steps number:', route2.shape[0])
 
 # So the possible approach could be bounding the maximum iteration limit to around 2000-3000 and choosing $\lambda \approx 0.1-0.01$. 
 
-# In[345]:
+# In[24]:
 
 
 extremum3, route3 = GradientDescent([-3, -3], FunctionValue,
@@ -551,7 +551,7 @@ print('Steps number:', route3.shape[0])
 
 
 # #### 6.
-# TO BE DONE: evaluate time complexity
+# ## TO BE DONE: evaluate time complexity
 
 # There is category of function which naive gradient descent works poorly for, e.g. [Rosenbrock function](https://en.wikipedia.org/wiki/Rosenbrock_function).
 # $$f(x, y) = (1-x)^2 + 100(y-x^2)^2.$$
@@ -566,7 +566,7 @@ print('Steps number:', route3.shape[0])
 # 
 # Let's firstly plot the function itself:
 
-# In[346]:
+# In[46]:
 
 
 fig = plt.figure(figsize=(8, 5))
@@ -588,7 +588,7 @@ surf = ax.plot_surface(X, Y, Z, cmap=cm.ocean, antialiased=True)
 # 200(y-x^2)
 # \end{pmatrix}$$
 
-# In[347]:
+# In[26]:
 
 
 def RosenbrockGradient(point2D):
@@ -599,7 +599,7 @@ def RosenbrockGradient(point2D):
     return [x_derivative, y_derivative]
 
 
-# In[348]:
+# In[27]:
 
 
 def RosenbrockValue(point2D):
@@ -608,14 +608,14 @@ def RosenbrockValue(point2D):
     return (1 - x)**2 + 100*(y - x**2)**2
 
 
-# In[349]:
+# In[28]:
 
 
 def InitRandomPoint(boundary):
     return np.random.uniform(-boundary, boundary, 2)
 
 
-# In[360]:
+# In[52]:
 
 
 random_point = InitRandomPoint(1)
@@ -626,7 +626,7 @@ print(extremum)
 print('Iterations number:', route.shape[0])
 
 
-# In[363]:
+# In[53]:
 
 
 fig = plt.figure(figsize=(7, 5))
