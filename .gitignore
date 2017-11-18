@@ -1,2 +1,3 @@
 # ignore jupyter checkpoints directory
 .ipynb_checkpoints/
+*.csv
