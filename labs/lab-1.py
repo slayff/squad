@@ -394,7 +394,7 @@ plt.show()
 
 # #### 7.
 # Let's calculate the complexity of our solution. Recall that all we have to do is to find $w$ in the following way:
-# $$w = (X^TX)^{-1}X^TY$$, where $X$ has a shape of $(l, n + 1)$ and $Y$ - $(l, 1)$, $n$ is the dimension of space.
+# $$w = (X^TX)^{-1}X^TY$$, where $X$ has a shape of $(l, n + 1)$ and $Y$ - $(l, 1)$, $n$ is the dimension of the space.
 # 
 # $X^T$ is computed in $O(l(n+1))$ time. The multiplication $X^TX$ takes $O((n+1)^2l) = O(n^2l)$. Computation of the inverse of $X^TX$ requires $O(n^3)$ time. The subsequent multiplication $(X^TX)^{-1}X^T$ takes $O(l(n+1) \times (n+1))$. And the last product is computed in $O(l(n+1))$.
 # 
@@ -468,13 +468,13 @@ def FunctionValue(point2D):
     return 3*x**2 + x*y + 2*y**2 - x - 4*y
 
 
-# In[19]:
+# In[113]:
 
 
 def GradientDescent(init_point, value_func, gradient_func, lambda_,
                     max_iter_num=-1, loss_eps=1e-9):
     cur_point = init_point
-    cur_value = FunctionValue(init_point)
+    cur_value = value_func(init_point)
     extremum_found = False
     path = []
     while not extremum_found and max_iter_num != 0:
@@ -492,7 +492,7 @@ def GradientDescent(init_point, value_func, gradient_func, lambda_,
     return cur_point, np.array(path)
 
 
-# In[20]:
+# In[114]:
 
 
 extremum, route = GradientDescent([-3, -3], FunctionValue,
@@ -615,7 +615,7 @@ def InitRandomPoint(boundary):
     return np.random.uniform(-boundary, boundary, 2)
 
 
-# In[52]:
+# In[117]:
 
 
 random_point = InitRandomPoint(1)
@@ -626,7 +626,7 @@ print(extremum)
 print('Iterations number:', route.shape[0])
 
 
-# In[53]:
+# In[118]:
 
 
 fig = plt.figure(figsize=(7, 5))
@@ -639,7 +639,25 @@ plt.legend(loc='best')
 plt.show()
 
 
-# By plotting contour lines we can see the problem. On its very first steps the algorithm goes at right angle to the contour line. But then something strange happens...(to be continued)
+# By plotting contour lines we can see the problem. On its very first steps the algorithm goes at right angle to the contour line. But then the shape of the route resembles the parabola $y = x^2$. Let's compare the first 15 steps of descent with the subsequent ones until the 1000th (it will be enough to clarify what's going on):
+
+# In[119]:
+
+
+fig = plt.figure(figsize=(7, 5))
+plt.plot(route[:15, 0], route[:15, 1], 'b', label='first 15 steps')
+plt.plot(route[15:1000, 0], route[15:1000, 1], 'r', label='the following steps till 1000th')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.legend(loc='best')
+plt.show()
+
+
+# So on its very first steps, algorithm tries to reach point $(x, y=x^2)$, in which our function is similar to $f(x, y) = (1-x)^2$. It is a parabola, with the minimum in $x=1$. Once we're in the point $(x, y=x^2)$, the algorithm tries to reach the minimum of $(1-x)^2$, while making the step close to $\lambda = 0.001$(the both x- and y- derivatives are relatively small) on parabola.  It obviously takes long time in order to reach $x=1$ point. At the same time we cannot increase $\lambda$ as it might lead to the divergence of the algorithm.
+# 
+# The possible approach could be finding the optimal $\lambda$ for each step, and we'll try doing that right now.
+# 
+# -----
 
 # There are some variations of the method, for example steepest descent, where we find optimal $\lambda$ for each step.
 # $$\lambda^{k} = \arg\min_{\lambda}Q(x_k - \lambda\triangledown Q(x_k)).$$
@@ -649,6 +667,211 @@ plt.show()
 # 2. Plot your splitting line. Compare with analytical solution.
 # 3. Try steepest descent.
 # 4. Comare gradient descent methods and show its convergence in axes $[step \times Q]$.
+
+# ### Solutions
+# ---
+# 
+
+# In[104]:
+
+
+set_size = 500
+mean_blue = np.array([-1, 1])
+mean_red = np.array([1, -1])
+cov_array = np.array([[0.6, 0.05], [0.05, 0.6]])
+blue_points = np.random.multivariate_normal(mean=mean_blue, cov=cov_array, size=set_size)
+red_points = np.random.multivariate_normal(mean=mean_red, cov=cov_array, size=set_size)
+plt.grid(True)
+plt.scatter(blue_points[:,0], blue_points[:, 1], c='b', alpha=0.5, label='-1')
+plt.scatter(red_points[:, 0], red_points[:, 1], c='r', alpha=0.5, label='+1')
+plt.legend(loc='best')
+plt.show()
+
+
+# In order to use gradient descent we need to define a loss function and find its gradient. Recall that $\mathbb{L}_{MSE} = ||(Xw - Y)||_2$. Let's find the gradient of the function with respect to the $w$ vector.
+# 
+# Let's first consider that $X' = (x_0, x_1, 1)$. That will lead to the $\mathbb{L'}_{MSE} = (x_0w_0+x_1w_1+w_2 - y)^2$. It's rather easy to find partial derivatives of this function:
+# $$\triangledown \mathbb{L'}_{MSE} = \begin{pmatrix}
+# 2(x_0w_0+x_1w_1+w_2 - y)x_0\\
+# 2(x_0w_0+x_1w_1+w_2 - y)x_1\\
+# 2(x_0w_0+x_1w_1+w_2 - y)
+# \end{pmatrix} =
+# \begin{pmatrix}
+# 2(X'w - Y)x_0\\
+# 2(X'w - Y)x_1\\
+# 2(X'w - Y)
+# \end{pmatrix}
+# $$
+# 
+# Considered this statement, it's quite easy to find the derivatives in general case:
+# 
+# $$\frac{\partial  }{\partial w_i}\mathbb{L}_{MSE} = \sum_{j}2(X_jw - Yj)X_{ji}$$
+# and the gradient itself:
+# $$\triangledown \mathbb{L}_{MSE} = 
+# 2X^T(Xw-Y)
+# $$
+# 
+
+# In[128]:
+
+
+def MSEValue(X, Y, w):
+    return ((X.dot(w) - Y)**2).sum(axis=0)[0]
+
+def MSEGradient(X, Y, w):
+    inner_part = X.dot(w) - Y
+    return 2*X.T.dot(inner_part)
+
+def GradientTraining(init_coef, X, Y, value_func, gradient_func, lambda_,
+                    max_iter_num=-1, loss_eps=1e-9):
+    cur_coef = init_coef
+    cur_value = value_func(X, Y, init_coef)
+    extremum_found = False
+    path = []
+    while not extremum_found and max_iter_num != 0:
+        path.append(cur_coef)
+        grad_value = gradient_func(X, Y, cur_coef)
+        new_coef = cur_coef - lambda_ * grad_value
+        if (abs(value_func(X, Y, new_coef) - value_func(X, Y, cur_coef)) < loss_eps):
+            extremum_found = True
+            break
+        cur_coef = new_coef
+        if max_iter_num > 0:
+            max_iter_num -= 1
+    return cur_coef, np.array(path)
+
+
+# In[358]:
+
+
+init_w = np.random.rand(3, 1)
+X = np.concatenate((red_points, blue_points), axis=0)
+X = np.concatenate((X, np.ones((2 * set_size, 1))), axis=1)
+Y = np.concatenate((np.ones((set_size, 1)), -np.ones((set_size, 1))), axis=0)
+w_descent, route_descent = GradientTraining(init_w, X, Y,
+                                  MSEValue, MSEGradient,
+                                  0.0001, max_iter_num=10000)
+
+
+# In[359]:
+
+
+print('Iterations number:', route_descent.shape[0])
+
+
+# Let's compare results with the analytical solution (we expect to see almost no difference):
+
+# In[309]:
+
+
+w_analyt = nla.inv(X.T.dot(X)).dot(X.T).dot(Y)
+print(w_descent, w_analyt, sep='\n'+'='*15+'\n')
+
+
+# In[294]:
+
+
+def Yvalue(normal, x):
+    c = normal[2] / normal[1]
+    b = normal[0] / normal[1]
+    return - c - b * x
+
+x_line = np.linspace(-3, 3, 100)
+y_descent = [Yvalue(w_descent, x) for x in x_line]
+y_analyt = [Yvalue(w_analyt, x) for x in x_line]
+
+plt.figure(figsize=(10, 6))
+plt.grid(True)
+plt.scatter(blue_points[:,0], blue_points[:, 1], c='b', alpha=0.5, label='-1')
+plt.scatter(red_points[:, 0], red_points[:, 1], c='r', alpha=0.5, label='+1')
+plt.plot(x_line, y_descent, 'k', lw=3, label = 'descent line')
+plt.plot(x_line, y_analyt, 'y', lw=1, label='analytical line')
+plt.legend(loc='best')
+plt.show()
+
+
+# And there is no surprise that both lines coincides.
+# Gradient descent worked pretty well in this task - just about 100 iterations. We want to try decrease that number - with the use of steepest gradient decent technique.
+# 
+# In order to apply the last we need to understand how to find $\lambda$. Recall that the condition for the optimal one is the following:
+# $$\lambda^{k} = \arg\min_{\lambda}Q(w_k - \lambda\triangledown Q(w_k))$$, where $Q$ is our loss function, i.e. MSE.
+# 
+# As we know, $\mathbb{L}_{MSE} = ||Xw - Y)||_2 = Q$, so we can simply find the minimum by differentiating the function and equaling it to 0:
+# 
+# $$Q(w_k-\lambda\triangledown Q(w_k)) = \sum_i(X_i(w_k-\lambda\triangledown Q(w_k)) - Y_i)^2 = \sum_i(X_iw_k-\lambda X_i\triangledown Q(w_k) - Y_i)^2 $$
+# 
+# $$Q'(w_k-\lambda\triangledown Q(w_k))_{\lambda} = -2\sum_iX_i\triangledown Q(w_k)(X_iw_k-\lambda X_i\triangledown Q(w_k) - Y_i)$$
+# 
+# $$-2\sum_iX_i\triangledown Q(w_k)(X_iw_k-\lambda X_i\triangledown Q(w_k) - Y_i) = 0$$
+# 
+# $$\lambda\sum_i(X_i\triangledown Q(w_k))^2+(Y_i-X_iw_k)X_i\triangledown Q(w_k) = 0$$
+# 
+# 
+# 
+# 
+# $$\lambda = \frac{\sum_i(X_iw_k-Y)X_i\triangledown Q(w_k)}{\sum_i(X_i\triangledown Q(w_k))^2}$$
+
+# In[258]:
+
+
+def FindBestLambda(X, Y, grad, w):
+    a = X.dot(grad)
+    b = X.dot(w) - Y
+    lambda_ = (b * a).sum()
+    lambda_ /= (a**2).sum()
+    return lambda_
+
+def SteepGradientTraining(init_coef, X, Y, value_func, gradient_func,
+                    max_iter_num=-1, loss_eps=1e-9):
+    cur_coef = init_coef
+    cur_value = value_func(X, Y, init_coef)
+    extremum_found = False
+    path = []
+    while not extremum_found and max_iter_num != 0:
+        path.append(cur_coef)
+        grad_value = gradient_func(X, Y, cur_coef)
+        lambda_ = FindBestLambda(X, Y, grad_value, cur_coef)
+        new_coef = cur_coef - lambda_ * grad_value
+        if (abs(value_func(X, Y, new_coef) - value_func(X, Y, cur_coef)) < loss_eps):
+            extremum_found = True
+            break
+        cur_coef = new_coef
+        if max_iter_num > 0:
+            max_iter_num -= 1
+    return cur_coef, np.array(path)
+
+
+# In[350]:
+
+
+init_w = np.random.rand(3, 1)
+w_steep, route_steep = SteepGradientTraining(init_w, X, Y,
+                                             MSEValue,
+                                             MSEGradient,
+                                             max_iter_num=10000)
+print(w_steep)
+print('Iterations number:', route_steep.shape[0])
+
+
+# The number of iteration decreased significantly. It shows that the convergence rate of steepest method is much higher. Let's plot the correspondence between step and $Q$ for both techniques:
+
+# In[371]:
+
+
+x_descent = range(len(route_descent))
+x_steep = range(len(route_steep))
+y_descent = [MSEValue(X, Y, route_descent[x]) for x in x_descent[:60]]
+y_steep = [MSEValue(X, Y, route_steep[x]) for x in x_steep]
+plt.figure(figsize=(10, 6))
+plt.grid(True)
+plt.title('Comparison of two gradient descent techniques')
+plt.plot(x_descent[:60], y_descent, 'ko-', lw=1, ms=2, label = 'simple gradient descent')
+plt.plot(x_steep, y_steep, 'ro-', lw=1, ms=2, label='steepest gradient descent')
+plt.xlabel('step')
+plt.ylabel('MSE')
+plt.legend(loc='best')
+plt.show()
+
 
 # ### 6. Stochastic gradient descent
 
