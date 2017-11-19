@@ -62,7 +62,7 @@
 # ### Solutions
 # ---
 
-# In[1]:
+# In[51]:
 
 
 import numpy as np
@@ -422,7 +422,7 @@ plt.show()
 # $$f(x, y) = 3x^2+xy+2y^2-x-4y$$
 # though it isn't obvious, this function has a global minimum of -2 at $(x, y) = (0, 1)$. Let's have a look at the plot itself.
 
-# In[17]:
+# In[136]:
 
 
 from mpl_toolkits.mplot3d import Axes3D
@@ -448,7 +448,7 @@ surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
 # x+4y-4
 # \end{pmatrix}$$
 
-# In[18]:
+# In[137]:
 
 
 def FindGradient(point2D):
@@ -459,7 +459,7 @@ def FindGradient(point2D):
     return [x_derivative, y_derivative]
 
 
-# In[12]:
+# In[138]:
 
 
 def FunctionValue(point2D):
@@ -468,7 +468,7 @@ def FunctionValue(point2D):
     return 3*x**2 + x*y + 2*y**2 - x - 4*y
 
 
-# In[113]:
+# In[139]:
 
 
 def GradientDescent(init_point, value_func, gradient_func, lambda_,
@@ -492,7 +492,7 @@ def GradientDescent(init_point, value_func, gradient_func, lambda_,
     return cur_point, np.array(path)
 
 
-# In[114]:
+# In[140]:
 
 
 extremum, route = GradientDescent([-3, -3], FunctionValue,
@@ -502,7 +502,7 @@ print(extremum)
 
 # As we can see, the point found by `GradientDescent` doesn't differ much from $(0, 1)$. Let's plot contour lines and trace the descent path.
 
-# In[21]:
+# In[141]:
 
 
 fig = plt.figure(figsize=(7, 5))
@@ -518,7 +518,7 @@ plt.show()
 # #### 5.
 # The choice of $\lambda$ may be based on some figures while experimenting:
 
-# In[22]:
+# In[142]:
 
 
 # warning: the following code goes to infinite loop
@@ -531,7 +531,7 @@ print(route1[:10])
 
 # It is clear that when $\lambda \geq 1$ the algorithm doesn't converge: on each step the function value only increases. When setting $\lambda$ to rather small value, the iteration number increases significantly: 
 
-# In[23]:
+# In[143]:
 
 
 extremum2, route2 = GradientDescent([-3, -3], FunctionValue,
@@ -541,7 +541,7 @@ print('Steps number:', route2.shape[0])
 
 # So the possible approach could be bounding the maximum iteration limit to around 2000-3000 and choosing $\lambda \approx 0.1-0.01$. 
 
-# In[24]:
+# In[144]:
 
 
 extremum3, route3 = GradientDescent([-3, -3], FunctionValue,
@@ -566,7 +566,7 @@ print('Steps number:', route3.shape[0])
 # 
 # Let's firstly plot the function itself:
 
-# In[46]:
+# In[145]:
 
 
 fig = plt.figure(figsize=(8, 5))
@@ -588,7 +588,7 @@ surf = ax.plot_surface(X, Y, Z, cmap=cm.ocean, antialiased=True)
 # 200(y-x^2)
 # \end{pmatrix}$$
 
-# In[26]:
+# In[146]:
 
 
 def RosenbrockGradient(point2D):
@@ -599,7 +599,7 @@ def RosenbrockGradient(point2D):
     return [x_derivative, y_derivative]
 
 
-# In[27]:
+# In[147]:
 
 
 def RosenbrockValue(point2D):
@@ -608,25 +608,26 @@ def RosenbrockValue(point2D):
     return (1 - x)**2 + 100*(y - x**2)**2
 
 
-# In[28]:
+# In[148]:
 
 
 def InitRandomPoint(boundary):
     return np.random.uniform(-boundary, boundary, 2)
 
 
-# In[117]:
+# In[165]:
 
 
-random_point = InitRandomPoint(1)
-extremum, route = GradientDescent(random_point,
+#random_point = InitRandomPoint(1)
+init_point = np.array([-0.9413, -0.9323])
+extremum, route = GradientDescent(init_point,
                                   RosenbrockValue, RosenbrockGradient,
                                   0.001, max_iter_num=100000)
 print(extremum)
 print('Iterations number:', route.shape[0])
 
 
-# In[118]:
+# In[166]:
 
 
 fig = plt.figure(figsize=(7, 5))
@@ -641,7 +642,7 @@ plt.show()
 
 # By plotting contour lines we can see the problem. On its very first steps the algorithm goes at right angle to the contour line. But then the shape of the route resembles the parabola $y = x^2$. Let's compare the first 15 steps of descent with the subsequent ones until the 1000th (it will be enough to clarify what's going on):
 
-# In[119]:
+# In[167]:
 
 
 fig = plt.figure(figsize=(7, 5))
@@ -672,7 +673,7 @@ plt.show()
 # ---
 # 
 
-# In[104]:
+# In[53]:
 
 
 set_size = 500
@@ -688,7 +689,7 @@ plt.legend(loc='best')
 plt.show()
 
 
-# In order to use gradient descent we need to define a loss function and find its gradient. Recall that $\mathbb{L}_{MSE} = ||(Xw - Y)||_2$. Let's find the gradient of the function with respect to the $w$ vector.
+# In order to use gradient descent we need to define a loss function and find its gradient. Recall that $\mathbb{L}_{MSE} = \frac{1}{l}||(Xw - Y)||_2$. Let's find the gradient of the function with respect to the $w$ vector.
 # 
 # Let's first consider that $X' = (x_0, x_1, 1)$. That will lead to the $\mathbb{L'}_{MSE} = (x_0w_0+x_1w_1+w_2 - y)^2$. It's rather easy to find partial derivatives of this function:
 # $$\triangledown \mathbb{L'}_{MSE} = \begin{pmatrix}
@@ -705,22 +706,23 @@ plt.show()
 # 
 # Considered this statement, it's quite easy to find the derivatives in general case:
 # 
-# $$\frac{\partial  }{\partial w_i}\mathbb{L}_{MSE} = \sum_{j}2(X_jw - Yj)X_{ji}$$
+# $$\frac{\partial  }{\partial w_i}\mathbb{L}_{MSE} = \frac{1}{l}\sum_{j}2(X_jw - Yj)X_{ji}$$
 # and the gradient itself:
 # $$\triangledown \mathbb{L}_{MSE} = 
-# 2X^T(Xw-Y)
+# \frac{1}{l}2X^T(Xw-Y)
 # $$
 # 
 
-# In[128]:
+# In[98]:
 
 
 def MSEValue(X, Y, w):
-    return ((X.dot(w) - Y)**2).sum(axis=0)[0]
+    squared_error = ((X.dot(w) - Y)**2).sum(axis=0)[0]
+    return squared_error / Y.shape[0]
 
 def MSEGradient(X, Y, w):
     inner_part = X.dot(w) - Y
-    return 2*X.T.dot(inner_part)
+    return 2*X.T.dot(inner_part) / Y.shape[0]
 
 def GradientTraining(init_coef, X, Y, value_func, gradient_func, lambda_,
                     max_iter_num=-1, loss_eps=1e-9):
@@ -741,19 +743,20 @@ def GradientTraining(init_coef, X, Y, value_func, gradient_func, lambda_,
     return cur_coef, np.array(path)
 
 
-# In[358]:
+# In[123]:
 
 
-init_w = np.random.rand(3, 1)
+#init_w = np.random.rand(3, 1)
+init_w = np.array([0.5792, 0.9566, 0.5841]).reshape((3, 1))
 X = np.concatenate((red_points, blue_points), axis=0)
 X = np.concatenate((X, np.ones((2 * set_size, 1))), axis=1)
 Y = np.concatenate((np.ones((set_size, 1)), -np.ones((set_size, 1))), axis=0)
 w_descent, route_descent = GradientTraining(init_w, X, Y,
-                                  MSEValue, MSEGradient,
-                                  0.0001, max_iter_num=10000)
+                                            MSEValue, MSEGradient, 0.1,
+                                            max_iter_num=10000, loss_eps=1e-12)
 
 
-# In[359]:
+# In[124]:
 
 
 print('Iterations number:', route_descent.shape[0])
@@ -761,14 +764,14 @@ print('Iterations number:', route_descent.shape[0])
 
 # Let's compare results with the analytical solution (we expect to see almost no difference):
 
-# In[309]:
+# In[125]:
 
 
 w_analyt = nla.inv(X.T.dot(X)).dot(X.T).dot(Y)
 print(w_descent, w_analyt, sep='\n'+'='*15+'\n')
 
 
-# In[294]:
+# In[127]:
 
 
 def Yvalue(normal, x):
@@ -811,7 +814,7 @@ plt.show()
 # 
 # $$\lambda = \frac{\sum_i(X_iw_k-Y)X_i\triangledown Q(w_k)}{\sum_i(X_i\triangledown Q(w_k))^2}$$
 
-# In[258]:
+# In[128]:
 
 
 def FindBestLambda(X, Y, grad, w):
@@ -841,10 +844,11 @@ def SteepGradientTraining(init_coef, X, Y, value_func, gradient_func,
     return cur_coef, np.array(path)
 
 
-# In[350]:
+# In[132]:
 
 
-init_w = np.random.rand(3, 1)
+#init_w = np.random.rand(3, 1)
+init_w = np.array([0.5792, 0.9566, 0.5841]).reshape((3, 1))
 w_steep, route_steep = SteepGradientTraining(init_w, X, Y,
                                              MSEValue,
                                              MSEGradient,
@@ -855,7 +859,7 @@ print('Iterations number:', route_steep.shape[0])
 
 # The number of iteration decreased significantly. It shows that the convergence rate of steepest method is much higher. Let's plot the correspondence between step and $Q$ for both techniques:
 
-# In[371]:
+# In[133]:
 
 
 x_descent = range(len(route_descent))
@@ -881,10 +885,273 @@ plt.show()
 # 1. Download [mnist](https://www.kaggle.com/c/digit-recognizer).
 # 2. Train linear classificator for digits 0 and 1, using logistic loss function and stochastic gradient descent.
 # 3. Use holdout to check [accuracy](https://en.wikipedia.org/wiki/Accuracy_and_precision) of classification.
-# 4. How do accuracy and training time depend on bathch size?
+# 4. How do accuracy and training time depend on batch size?
 # 5. Plot graphic that proves your words.
 # 6. How many epochs you use? Why?
 # 7. Plot value of loss function for each step (try use [exponential smoothing](https://en.wikipedia.org/wiki/Exponential_smoothing)).
+
+# Let's import train dataset, split it into two subsets in order to check accuracy via holdout validation and prepare $X_{train}$ and $Y_{train}$ matrixes so we can use gradient descent.
+
+# In[434]:
+
+
+import pandas as pd
+data = pd.read_csv('train.csv', sep=',')
+data01 = data[data['label'].isin((0, 1))]
+np_data01 = data01.values
+
+
+# In[435]:
+
+
+from sklearn.model_selection import train_test_split
+from sklearn import metrics
+from sklearn.utils import shuffle
+
+
+# In[521]:
+
+
+X = np_data01[:,1:]
+Y = np_data01[:, 0:1]
+
+# uncomment the following if want to experiment with normalization
+'''
+norm_values = np.linalg.norm(X, axis=1)
+adj_norm_values = [*map(lambda x: 1 if x == 0 else x, norm_values)]
+adj_norm_values = norm_values.reshape(norm_values.shape[0], 1)
+X = X / adj_norm_values
+'''
+X = np.concatenate((X, np.ones((X.shape[0], 1))), axis=1)
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y,
+                                                    test_size=0.33,
+                                                    random_state=42)
+Y_train = Y_train * 2 - 1
+Y_test = Y_test * 2 - 1
+
+
+# In order to use gradient descent with logistic loss function, we will need to find the gradient of the last.
+# 
+# $$Q(w) = \frac{1}{l}\sum_{i} \ln \big(1 + \exp(-y_i(X_iw) )) \big)$$
+# 
+# $$\frac{\partial  }{\partial w_i}Q(w) = \frac{1}{l}\sum_j-Y_jX_i^T\frac{e^{-Y_jX_jw}}{1+e^{-Y_jX_jw}}$$
+# 
+# $$\triangledown Q(w) = \frac{1}{l}X^T \big( -Y \frac{e^{-YXw}}{1+e^{-YXw}} \big) $$
+
+# In[626]:
+
+
+import time
+
+
+# In[471]:
+
+
+def LogValue(X, Y, w):
+    inner_part = -X.dot(w) * Y
+    loss = np.log(1 + np.exp(inner_part))
+    '''
+    loss = 0
+    for i in range(inner_part.shape[0]):
+        if (inner_part[i,0] > 20):
+            loss += inner_part[i, 0]
+        else:
+            loss += np.log(1 + np.exp(inner_part[i, 0]))
+    loss /= Y.shape[0]
+    '''
+    return np.mean(loss)
+
+def LogGradient(X, Y, w):
+    value = -Y * X.dot(w)
+    inner_part = -Y * np.exp(value) / (1 + np.exp(value))
+    inner_part = X.T.dot(inner_part)
+    return inner_part / Y.shape[0]
+
+def NextBatch(X, Y, batch_size):
+    begin = 0
+    x_size = X.shape[0]
+    while begin < x_size:
+        end = min(begin + batch_size, x_size)
+        yield X[begin:end], Y[begin:end]
+        begin = end
+
+
+# In[627]:
+
+
+def StohasticGD(init_coef, X, Y, value_func, gradient_func, batch_size,
+                lambda_=1e-5, max_iter_num=10, loss_eps=1e-9):
+    start = time.time()
+    cur_coef = init_coef
+    cur_value = value_func(X, Y, init_coef)
+    path = []
+    while max_iter_num != 0:
+        X, Y = shuffle(X, Y, random_state=42)
+        for X_batch, Y_batch in NextBatch(X, Y, batch_size):
+            path.append(cur_coef)
+            grad_value = gradient_func(X_batch, Y_batch, cur_coef)
+            new_coef = cur_coef - lambda_ * grad_value
+            cur_coef = new_coef
+        max_iter_num -= 1
+    return cur_coef, np.array(path), time.time() - start
+
+
+# In[593]:
+
+
+def NormalTruncatedCoef(size):
+    result = []
+    for _ in range(size):
+        k = np.random.normal(0, 0.05)
+        while abs(k) > 0.1:
+            k = np.random.normal(0, 0.05)
+        result.append(k)
+    return np.array(result).reshape((size, 1))
+
+
+# In[696]:
+
+
+init_coef = NormalTruncatedCoef(X_train.shape[1])
+#init_coef = np.zeros((X_train.shape[1], 1))
+w_sgd, route, time_taken = StohasticGD(init_coef, X_train, Y_train, LogValue,
+                          LogGradient, 10)
+
+
+# Let's check the accuracy of the classification. In order to do that we will try to predict labels on test(validation) dataset. Recall that by minimizing the logistic loss function we actlually maximaze the probability $$\mathbb{P}\{y=1 \mid x\} = \frac{1}{1 + e^{-w^Tx}}$$
+# 
+# The natural way to define whether the picture is 1 or not is to evaluate the probability mentioned above and to compare it with 0.5. If it is more than 0.5 then we state that the picture is 1, otherwise it's 0.
+
+# In[697]:
+
+
+def PredictLabels(X, w):
+    value = np.exp(-X.dot(w))
+    probability = 1 / (1 + value)
+    for i in range(probability.shape[0]):
+        p = probability[i, 0]
+        probability[i, 0] = 1 if p > 0.5 else -1
+    return probability
+
+
+# In[698]:
+
+
+Y_predicted = PredictLabels(X_test, w_sgd)
+print(metrics.accuracy_score(Y_predicted, Y_test))
+
+
+# In[699]:
+
+
+time_taken
+
+
+# Let's play with parameters and check the dependance of the time and accuracy with the batch size. In general, when batch size is relatively small, the time increases, while the accuracy is high. On the contrary, with increasing batch size we have the decrease of time taken by the algorithm while the accuracy is lower.
+
+# In[701]:
+
+
+new_init_coef = NormalTruncatedCoef(X_train.shape[1])
+
+
+# In[704]:
+
+
+sgd1, route1, time_1 = StohasticGD(new_init_coef, X_train, Y_train, LogValue, LogGradient, 1)
+sgd10, route10, time_10 = StohasticGD(new_init_coef, X_train, Y_train, LogValue, LogGradient, 10)
+sgd100, route100, time_100 = StohasticGD(new_init_coef, X_train, Y_train, LogValue, LogGradient, 100)
+sgd250, route250, time_250 = StohasticGD(new_init_coef, X_train, Y_train, LogValue, LogGradient, 250)
+sgd500, route500, time_500 = StohasticGD(new_init_coef, X_train, Y_train, LogValue, LogGradient, 500)
+sgd1000, route1000, time_1000 = StohasticGD(new_init_coef, X_train, Y_train, LogValue, LogGradient, 1000)
+
+
+# In[707]:
+
+
+Y_predicted_1 = PredictLabels(X_test, sgd1)
+Y_predicted_10 = PredictLabels(X_test, sgd10)
+Y_predicted_100 = PredictLabels(X_test, sgd100)
+Y_predicted_250 = PredictLabels(X_test, sgd250)
+Y_predicted_500 = PredictLabels(X_test, sgd500)
+Y_predicted_1000 = PredictLabels(X_test, sgd1000)
+
+
+# In[708]:
+
+
+fig, (pl1, pl2) = plt.subplots(1, 2, figsize=(15, 5))
+pl1.grid(True)
+param = [1, 10, 100, 250, 500, 1000]
+times = [time_1, time_10, time_100, time_250, time_500, time_1000]
+predictions = [Y_predicted_1, Y_predicted_10, Y_predicted_100, Y_predicted_250,
+               Y_predicted_500, Y_predicted_1000]
+accuracy = [metrics.accuracy_score(p, Y_test) for p in predictions]
+pl1.plot(param, times, 'ko-', lw=1, label = 'time taken')
+pl1.set_xlabel('batch size')
+pl1.set_ylabel('s')
+pl1.legend(loc='best')
+
+pl2.plot(param, accuracy, 'ro-', lw=1, label= 'accuracy')
+pl2.set_xlabel('batch size')
+pl2.set_ylabel('score')
+pl2.legend(loc='best')
+plt.show()
+
+
+# The number of epochs is 10 as it provides better accuracy with the resonable amount of time.
+
+# In[709]:
+
+
+def ExpSmoothing(loss, gamma):
+    new_loss = [loss[0]]
+    for i in range(1, len(loss)):
+        new_loss.append(new_loss[i - 1] * gamma + loss[i] * (1 - gamma))
+    return new_loss
+
+
+# In[710]:
+
+
+loss1 = [LogValue(X_test, Y_test, w) for w in route1]
+loss10 = [LogValue(X_test, Y_test, w) for w in route10]
+loss100 = [LogValue(X_test, Y_test, w) for w in route100]
+loss250 = [LogValue(X_test, Y_test, w) for w in route250]
+loss500 = [LogValue(X_test, Y_test, w) for w in route500]
+loss1000 = [LogValue(X_test, Y_test, w) for w in route1000]
+
+
+# In[716]:
+
+
+exp_loss1 = ExpSmoothing(loss1, 0.6)
+exp_loss10 = ExpSmoothing(loss10, 0.6)
+exp_loss100 = ExpSmoothing(loss100, 0.6)
+exp_loss250 = ExpSmoothing(loss250, 0.6)
+exp_loss500 = ExpSmoothing(loss500, 0.6)
+exp_loss1000 = ExpSmoothing(loss1000, 0.6)
+
+
+# In[724]:
+
+
+fig, (pl1, pl2) = plt.subplots(1, 2, figsize=(15, 5))
+pl1.grid(True)
+pl1.plot(range(0, 10000), exp_loss1[:10000], 'k', lw=1, label = 'time taken')
+pl1.set_xlabel('step')
+pl1.set_ylabel('loss')
+pl1.set_title('batch_size = 1')
+pl1.legend(loc='best')
+
+pl2.grid(True)
+pl2.plot(range(len(exp_loss500)), exp_loss500, 'r', lw=1, label = 'time taken')
+pl2.set_xlabel('step')
+pl2.set_ylabel('loss')
+pl2.set_title('batch_size = 500')
+pl2.legend(loc='best')
+plt.show()
+
 
 # #### Momentum method
 # Stochastic gradient descent with momentum remembers the update of $x$ at each iteration, and determines the next update as a linear combination of the gradient and the previous update
@@ -921,7 +1188,7 @@ plt.show()
 # 2. Give an example of a function that can show the difference in the studied stohastic gradient methods.
 # 3. Show animation step by step how methods work.
 # 4. Use your favorite method on mnist dataset again.
-# 5. Show convergence of alrotigthm.
+# 5. Show convergence of algorithm.
 # 6. Check quality, using holdout.
 # 
 # #### Papers
