@@ -550,8 +550,7 @@ print(extremum3)
 print('Steps number:', route3.shape[0])
 
 
-# #### 6.
-# ## TO BE DONE: evaluate time complexity
+# Time complexity is based on $\lambda$ parameter - if it is small, then we make more steps...
 
 # There is category of function which naive gradient descent works poorly for, e.g. [Rosenbrock function](https://en.wikipedia.org/wiki/Rosenbrock_function).
 # $$f(x, y) = (1-x)^2 + 100(y-x^2)^2.$$
@@ -944,11 +943,11 @@ Y_test = Y_test * 2 - 1
 import time
 
 
-# In[471]:
+# In[747]:
 
 
 def LogValue(X, Y, w):
-    inner_part = -X.dot(w) * Y
+    inner_part = -Y * X.dot(w) 
     loss = np.log(1 + np.exp(inner_part))
     '''
     loss = 0
@@ -959,7 +958,7 @@ def LogValue(X, Y, w):
             loss += np.log(1 + np.exp(inner_part[i, 0]))
     loss /= Y.shape[0]
     '''
-    return np.mean(loss)
+    return np.sum(loss) / Y.shape[0]
 
 def LogGradient(X, Y, w):
     value = -Y * X.dot(w)
@@ -976,7 +975,7 @@ def NextBatch(X, Y, batch_size):
         begin = end
 
 
-# In[627]:
+# In[748]:
 
 
 def StohasticGD(init_coef, X, Y, value_func, gradient_func, batch_size,
@@ -996,7 +995,7 @@ def StohasticGD(init_coef, X, Y, value_func, gradient_func, batch_size,
     return cur_coef, np.array(path), time.time() - start
 
 
-# In[593]:
+# In[749]:
 
 
 def NormalTruncatedCoef(size):
@@ -1009,7 +1008,7 @@ def NormalTruncatedCoef(size):
     return np.array(result).reshape((size, 1))
 
 
-# In[696]:
+# In[750]:
 
 
 init_coef = NormalTruncatedCoef(X_train.shape[1])
@@ -1022,7 +1021,7 @@ w_sgd, route, time_taken = StohasticGD(init_coef, X_train, Y_train, LogValue,
 # 
 # The natural way to define whether the picture is 1 or not is to evaluate the probability mentioned above and to compare it with 0.5. If it is more than 0.5 then we state that the picture is 1, otherwise it's 0.
 
-# In[697]:
+# In[751]:
 
 
 def PredictLabels(X, w):
@@ -1034,14 +1033,14 @@ def PredictLabels(X, w):
     return probability
 
 
-# In[698]:
+# In[752]:
 
 
 Y_predicted = PredictLabels(X_test, w_sgd)
 print(metrics.accuracy_score(Y_predicted, Y_test))
 
 
-# In[699]:
+# In[753]:
 
 
 time_taken
@@ -1049,13 +1048,13 @@ time_taken
 
 # Let's play with parameters and check the dependance of the time and accuracy with the batch size. In general, when batch size is relatively small, the time increases, while the accuracy is high. On the contrary, with increasing batch size we have the decrease of time taken by the algorithm while the accuracy is lower.
 
-# In[701]:
+# In[754]:
 
 
 new_init_coef = NormalTruncatedCoef(X_train.shape[1])
 
 
-# In[704]:
+# In[755]:
 
 
 sgd1, route1, time_1 = StohasticGD(new_init_coef, X_train, Y_train, LogValue, LogGradient, 1)
@@ -1066,7 +1065,7 @@ sgd500, route500, time_500 = StohasticGD(new_init_coef, X_train, Y_train, LogVal
 sgd1000, route1000, time_1000 = StohasticGD(new_init_coef, X_train, Y_train, LogValue, LogGradient, 1000)
 
 
-# In[707]:
+# In[756]:
 
 
 Y_predicted_1 = PredictLabels(X_test, sgd1)
@@ -1077,7 +1076,7 @@ Y_predicted_500 = PredictLabels(X_test, sgd500)
 Y_predicted_1000 = PredictLabels(X_test, sgd1000)
 
 
-# In[708]:
+# In[757]:
 
 
 fig, (pl1, pl2) = plt.subplots(1, 2, figsize=(15, 5))
@@ -1101,7 +1100,7 @@ plt.show()
 
 # The number of epochs is 10 as it provides better accuracy with the resonable amount of time.
 
-# In[709]:
+# In[758]:
 
 
 def ExpSmoothing(loss, gamma):
@@ -1111,34 +1110,34 @@ def ExpSmoothing(loss, gamma):
     return new_loss
 
 
-# In[710]:
+# In[759]:
 
 
-loss1 = [LogValue(X_test, Y_test, w) for w in route1]
-loss10 = [LogValue(X_test, Y_test, w) for w in route10]
-loss100 = [LogValue(X_test, Y_test, w) for w in route100]
-loss250 = [LogValue(X_test, Y_test, w) for w in route250]
-loss500 = [LogValue(X_test, Y_test, w) for w in route500]
-loss1000 = [LogValue(X_test, Y_test, w) for w in route1000]
+#loss1 = [LogValue(X_test, Y_test, w) for w in route1]
+loss10 = [LogValue(X_train, Y_train, w) for w in route10]
+#loss100 = [LogValue(X_test, Y_test, w) for w in route100]
+loss250 = [LogValue(X_train, Y_train, w) for w in route250]
+#loss500 = [LogValue(X_test, Y_test, w) for w in route500]
+#loss1000 = [LogValue(X_test, Y_test, w) for w in route1000]
 
 
-# In[716]:
+# In[760]:
 
 
-exp_loss1 = ExpSmoothing(loss1, 0.6)
+#exp_loss1 = ExpSmoothing(loss1, 0.6)
 exp_loss10 = ExpSmoothing(loss10, 0.6)
-exp_loss100 = ExpSmoothing(loss100, 0.6)
+#exp_loss100 = ExpSmoothing(loss100, 0.6)
 exp_loss250 = ExpSmoothing(loss250, 0.6)
-exp_loss500 = ExpSmoothing(loss500, 0.6)
-exp_loss1000 = ExpSmoothing(loss1000, 0.6)
+#exp_loss500 = ExpSmoothing(loss500, 0.6)
+#exp_loss1000 = ExpSmoothing(loss1000, 0.6)
 
 
-# In[724]:
+# In[860]:
 
 
 fig, (pl1, pl2) = plt.subplots(1, 2, figsize=(15, 5))
 pl1.grid(True)
-pl1.plot(range(0, 10000), exp_loss1[:10000], 'k', lw=1, label = 'time taken')
+pl1.plot(range(0, 500), exp_loss1[:500], 'k', lw=1, label = 'time taken')
 pl1.set_xlabel('step')
 pl1.set_ylabel('loss')
 pl1.set_title('batch_size = 1')
@@ -1162,6 +1161,116 @@ plt.show()
 # 2. Use momentum method and compare pathes.
 # 3. How do you choose $\gamma$?
 
+# In[813]:
+
+
+def Func2Value(point):
+    x = point[0][0]
+    y = point[1][0]
+    return 10*x**2 + y**2
+
+def Func2Grad(point):
+    x = point[0][0]
+    y = point[1][0]
+    x_derivative = 20*x
+    y_derivative = 2*y
+    return np.array([x_derivative, y_derivative]).reshape(2, 1)
+
+def MomentumGD(init_point, value_func, gradient_func, lambda_,
+               gamma=0.8, max_iter_num=-1, loss_eps=1e-9):
+    cur_point = init_point
+    cur_value = value_func(init_point)
+    extremum_found = False
+    s = np.zeros((2, 1))
+    path = []
+    while not extremum_found and max_iter_num != 0:
+        path.append(cur_point)
+        grad_value = gradient_func(cur_point)
+        s = gamma * s + lambda_ * grad_value
+        new_point = cur_point - s
+        if (abs(value_func(new_point) - value_func(cur_point)) < loss_eps):
+            extremum_found = True
+            break
+        cur_point = new_point
+        if max_iter_num > 0:
+            max_iter_num -= 1
+    return cur_point, np.array(path)
+
+def NaiveGD(init_point, value_func, gradient_func, lambda_,
+                    max_iter_num=-1, loss_eps=1e-9):
+    cur_point = init_point
+    cur_value = value_func(init_point)
+    extremum_found = False
+    path = []
+    while not extremum_found and max_iter_num != 0:
+        path.append(cur_point)
+        grad_value = gradient_func(cur_point)
+        new_point = cur_point - lambda_ * grad_value
+        if (abs(value_func(new_point) - value_func(cur_point)) < loss_eps):
+            extremum_found = True
+            break
+        cur_point = new_point
+        if max_iter_num > 0:
+            max_iter_num -= 1
+    return cur_point, np.array(path)
+
+
+# In[820]:
+
+
+naive_sol, route_naive = NaiveGD(np.array([-3, 3]).reshape(2,1), Func2Value,
+                                  Func2Grad, 0.01)
+momentum_sol, route_momentum = MomentumGD(np.array([-3, 3]).reshape(2,1), Func2Value,
+                                  Func2Grad, 0.01)
+
+print(naive_sol, end='\n'+'='*20+'\n')
+print(gdsol)
+
+
+# In[828]:
+
+
+fig = plt.figure(figsize=(7, 5))
+X = np.linspace(-3, 3, 100)
+Y = np.linspace(-3, 3, 100)
+X, Y = np.meshgrid(X, Y)
+Z = 10*X**2 + Y**2
+
+
+plt.title('Contour plot')
+plt.contourf(X, Y, Z, 40)
+plt.plot(route_naive[:, 0], route_naive[:, 1], 'ro-', ms=2, lw=1, label='naive GD path')
+plt.plot(route_momentum[:, 0], route_momentum[:, 1], 'yo-', ms=2, lw=1, label='momentum GD path')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.legend(loc='best')
+plt.show()
+
+
+# In[829]:
+
+
+momentum_sol_2, route_momentum_2 = MomentumGD(np.array([-3, 3]).reshape(2,1), Func2Value,
+                                  Func2Grad, 0.01, gamma=0.2)
+momentum_sol_3, route_momentum_3 = MomentumGD(np.array([-3, 3]).reshape(2,1), Func2Value,
+                                  Func2Grad, 0.01, gamma=0.95)
+
+
+# In[830]:
+
+
+plt.title('Contour plot')
+plt.contourf(X, Y, Z, 40)
+plt.plot(route_momentum_2[:, 0], route_momentum_2[:, 1], 'ro-', ms=2, lw=1, label='gamma = 0.2')
+plt.plot(route_momentum_3[:, 0], route_momentum_3[:, 1], 'yo-', ms=2, lw=1, label='gamma = 0.9')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.legend(loc='best')
+plt.show()
+
+
+# Based on some experiments, it's clear, that high value of $\gamma$ leads to strange paths of descent, moreover it could even diverges. At the same time, small $\gamma$ brings no much difference between momentum and naive gradient descent, so the most useful $\gamma \approx 0,7-0,8$.
+
 # #### Nesterov accelerated gradient
 # And the logical development of this approach leads to the accelerated Nesterov's gradient. The descent step is calculated a little differently
 # $$s^k = \gamma s^{k-1} + \lambda\triangledown Q(x^k - \gamma s^{k-1}),$$
@@ -1170,6 +1279,73 @@ plt.show()
 # #### Еxercises
 # 1. Compare this method and previous with Rosenbrock function.
 # 2. Plot traces of both algorithms.
+
+# In[853]:
+
+
+def RosenbrockGradient(point):
+    x = point[0, 0]
+    y = point[1, 0]
+    x_derivative = 2*(x - 1) + 400*(x**2 - y)*x
+    y_derivative = 200*(y - x**2)
+    return np.array([x_derivative, y_derivative]).reshape(2, 1)
+
+def RosenbrockValue(point):
+    x = point[0, 0]
+    y = point[1, 0]
+    return (1 - x)**2 + 100*(y - x**2)**2
+
+def NesterovGD(init_point, value_func, gradient_func, lambda_,
+               gamma=0.8, max_iter_num=-1, loss_eps=1e-15):
+    cur_point = init_point
+    cur_value = value_func(init_point)
+    extremum_found = False
+    s = np.zeros((2, 1))
+    path = []
+    while not extremum_found and max_iter_num != 0:
+        path.append(cur_point)
+        grad_value = gradient_func(cur_point - gamma * s)
+        s = gamma * s + lambda_ * grad_value
+        new_point = cur_point - s
+        if (abs(value_func(new_point) - value_func(cur_point)) < loss_eps):
+            extremum_found = True
+            break
+        cur_point = new_point
+        if max_iter_num > 0:
+            max_iter_num -= 1
+    return cur_point, np.array(path)
+
+
+# In[866]:
+
+
+init_point = np.array([-7, 3]).reshape(2, 1)
+momentum_ans, route_momentum = MomentumGD(init_point, 
+                                          RosenbrockValue, RosenbrockGradient, 
+                                          0.00001, gamma=0.9)
+nesterov_ans, route_nesterov = NesterovGD(init_point,
+                                         RosenbrockValue, RosenbrockGradient,
+                                         0.00001, gamma=0.9)
+
+
+# In[870]:
+
+
+X = np.linspace(-12, 12, 1000)
+Y = np.linspace(-12, 12, 1000)
+X, Y = np.meshgrid(X, Y)
+Z = (1 - X)**2 + 100*(Y - X**2)**2
+
+fig = plt.figure(figsize=(8, 6))
+plt.title('Contour plot')
+plt.contourf(X, Y, Z, 40)
+plt.plot(route_nesterov[:, 0], route_nesterov[:, 1], 'ro-', ms=2, lw=1, label='nesterov GD path')
+plt.plot(route_momentum[:, 0], route_momentum[:, 1], 'yo-', ms=2, lw=1, label='momentum GD path')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.legend(loc='best')
+plt.show()
+
 
 # #### Adagrad (2011)
 # Adaptive gradient finds lambda for each dimension of the input vector x. Informally speaking, for sparce features it makes a bigger step, but for regular ones smaller step.
@@ -1194,3 +1370,6 @@ plt.show()
 # #### Papers
 # 1. [Adadelta (2012)](https://arxiv.org/pdf/1212.5701.pdf)
 # 2. [Adam (2015)](https://arxiv.org/pdf/1412.6980.pdf)
+
+# #### TO BE DONE 
+# #### ETA: 20.11 23:59
