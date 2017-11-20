@@ -908,7 +908,7 @@ from sklearn import metrics
 from sklearn.utils import shuffle
 
 
-# In[521]:
+# In[899]:
 
 
 X = np_data01[:,1:]
@@ -923,7 +923,7 @@ X = X / adj_norm_values
 '''
 X = np.concatenate((X, np.ones((X.shape[0], 1))), axis=1)
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y,
-                                                    test_size=0.33,
+                                                    test_size=0.2,
                                                     random_state=42)
 Y_train = Y_train * 2 - 1
 Y_test = Y_test * 2 - 1
@@ -937,13 +937,13 @@ Y_test = Y_test * 2 - 1
 # 
 # $$\triangledown Q(w) = \frac{1}{l}X^T \big( -Y \frac{e^{-YXw}}{1+e^{-YXw}} \big) $$
 
-# In[626]:
+# In[900]:
 
 
 import time
 
 
-# In[747]:
+# In[901]:
 
 
 def LogValue(X, Y, w):
@@ -975,7 +975,7 @@ def NextBatch(X, Y, batch_size):
         begin = end
 
 
-# In[748]:
+# In[902]:
 
 
 def StohasticGD(init_coef, X, Y, value_func, gradient_func, batch_size,
@@ -995,7 +995,7 @@ def StohasticGD(init_coef, X, Y, value_func, gradient_func, batch_size,
     return cur_coef, np.array(path), time.time() - start
 
 
-# In[749]:
+# In[903]:
 
 
 def NormalTruncatedCoef(size):
@@ -1008,7 +1008,7 @@ def NormalTruncatedCoef(size):
     return np.array(result).reshape((size, 1))
 
 
-# In[750]:
+# In[904]:
 
 
 init_coef = NormalTruncatedCoef(X_train.shape[1])
@@ -1021,7 +1021,7 @@ w_sgd, route, time_taken = StohasticGD(init_coef, X_train, Y_train, LogValue,
 # 
 # The natural way to define whether the picture is 1 or not is to evaluate the probability mentioned above and to compare it with 0.5. If it is more than 0.5 then we state that the picture is 1, otherwise it's 0.
 
-# In[751]:
+# In[905]:
 
 
 def PredictLabels(X, w):
@@ -1033,14 +1033,14 @@ def PredictLabels(X, w):
     return probability
 
 
-# In[752]:
+# In[906]:
 
 
 Y_predicted = PredictLabels(X_test, w_sgd)
 print(metrics.accuracy_score(Y_predicted, Y_test))
 
 
-# In[753]:
+# In[907]:
 
 
 time_taken
@@ -1048,13 +1048,14 @@ time_taken
 
 # Let's play with parameters and check the dependance of the time and accuracy with the batch size. In general, when batch size is relatively small, the time increases, while the accuracy is high. On the contrary, with increasing batch size we have the decrease of time taken by the algorithm while the accuracy is lower.
 
-# In[754]:
+# In[931]:
 
 
-new_init_coef = NormalTruncatedCoef(X_train.shape[1])
+#new_init_coef = NormalTruncatedCoef(X_train.shape[1])
+new_init_coef = np.zeros((X_train.shape[1], 1))
 
 
-# In[755]:
+# In[932]:
 
 
 sgd1, route1, time_1 = StohasticGD(new_init_coef, X_train, Y_train, LogValue, LogGradient, 1)
@@ -1065,7 +1066,7 @@ sgd500, route500, time_500 = StohasticGD(new_init_coef, X_train, Y_train, LogVal
 sgd1000, route1000, time_1000 = StohasticGD(new_init_coef, X_train, Y_train, LogValue, LogGradient, 1000)
 
 
-# In[756]:
+# In[933]:
 
 
 Y_predicted_1 = PredictLabels(X_test, sgd1)
@@ -1076,7 +1077,7 @@ Y_predicted_500 = PredictLabels(X_test, sgd500)
 Y_predicted_1000 = PredictLabels(X_test, sgd1000)
 
 
-# In[757]:
+# In[934]:
 
 
 fig, (pl1, pl2) = plt.subplots(1, 2, figsize=(15, 5))
@@ -1100,7 +1101,7 @@ plt.show()
 
 # The number of epochs is 10 as it provides better accuracy with the resonable amount of time.
 
-# In[758]:
+# In[935]:
 
 
 def ExpSmoothing(loss, gamma):
@@ -1110,10 +1111,10 @@ def ExpSmoothing(loss, gamma):
     return new_loss
 
 
-# In[759]:
+# In[936]:
 
 
-#loss1 = [LogValue(X_test, Y_test, w) for w in route1]
+loss1 = [LogValue(X_test, Y_test, w) for w in route1]
 loss10 = [LogValue(X_train, Y_train, w) for w in route10]
 #loss100 = [LogValue(X_test, Y_test, w) for w in route100]
 loss250 = [LogValue(X_train, Y_train, w) for w in route250]
@@ -1121,33 +1122,33 @@ loss250 = [LogValue(X_train, Y_train, w) for w in route250]
 #loss1000 = [LogValue(X_test, Y_test, w) for w in route1000]
 
 
-# In[760]:
+# In[946]:
 
 
-#exp_loss1 = ExpSmoothing(loss1, 0.6)
-exp_loss10 = ExpSmoothing(loss10, 0.6)
+exp_loss1 = ExpSmoothing(loss1, 0.9)
+exp_loss10 = ExpSmoothing(loss10, 0.9)
 #exp_loss100 = ExpSmoothing(loss100, 0.6)
-exp_loss250 = ExpSmoothing(loss250, 0.6)
+exp_loss250 = ExpSmoothing(loss250, 0.9)
 #exp_loss500 = ExpSmoothing(loss500, 0.6)
 #exp_loss1000 = ExpSmoothing(loss1000, 0.6)
 
 
-# In[860]:
+# In[951]:
 
 
 fig, (pl1, pl2) = plt.subplots(1, 2, figsize=(15, 5))
 pl1.grid(True)
-pl1.plot(range(0, 500), exp_loss1[:500], 'k', lw=1, label = 'time taken')
+pl1.plot(range(0, 300), exp_loss1[:300], 'k', lw=1, label = 'time taken')
 pl1.set_xlabel('step')
 pl1.set_ylabel('loss')
 pl1.set_title('batch_size = 1')
 pl1.legend(loc='best')
 
 pl2.grid(True)
-pl2.plot(range(len(exp_loss500)), exp_loss500, 'r', lw=1, label = 'time taken')
+pl2.plot(range(len(loss250)), exp_loss250, 'r', lw=1, label = 'time taken')
 pl2.set_xlabel('step')
 pl2.set_ylabel('loss')
-pl2.set_title('batch_size = 500')
+pl2.set_title('batch_size = 250')
 pl2.legend(loc='best')
 plt.show()
 
@@ -1371,5 +1372,183 @@ plt.show()
 # 1. [Adadelta (2012)](https://arxiv.org/pdf/1212.5701.pdf)
 # 2. [Adam (2015)](https://arxiv.org/pdf/1412.6980.pdf)
 
-# #### TO BE DONE 
-# #### ETA: 20.11 23:59
+# In[975]:
+
+
+def Adagrad(init_point, value_func, gradient_func, lambda_,
+            max_iter_num=-1, loss_eps=1e-15, eps=1e-9):
+    cur_point = init_point
+    cur_value = value_func(init_point)
+    extremum_found = False
+    g = np.zeros(init_point.shape)
+    path = []
+    path.append(cur_point)
+    while not extremum_found and max_iter_num != 0:
+        grad_value = gradient_func(cur_point)
+        g += grad_value**2
+        new_point = cur_point - lambda_ / (np.sqrt(g) + eps) * grad_value
+        if (abs(value_func(new_point) - value_func(cur_point)) < loss_eps):
+            extremum_found = True
+        cur_point = new_point
+        path.append(cur_point)
+        if max_iter_num > 0:
+            max_iter_num -= 1
+    return cur_point, np.array(path)
+
+
+# In[1039]:
+
+
+def RMSprop(init_point, value_func, gradient_func, lambda_, gamma=0.9,
+            max_iter_num=-1, loss_eps=1e-15, eps=1e-9):
+    cur_point = init_point
+    cur_value = value_func(init_point)
+    extremum_found = False
+    g = np.zeros(init_point.shape)
+    path = []
+    path.append(cur_point)
+    while not extremum_found and max_iter_num != 0:
+        grad_value = gradient_func(cur_point)
+        g = gamma * g + (1 - gamma) * grad_value**2
+        new_point = cur_point - lambda_ / (np.sqrt(g) + eps) * grad_value
+        if (abs(value_func(new_point) - value_func(cur_point)) < loss_eps):
+            extremum_found = True
+        cur_point = new_point
+        path.append(cur_point)
+        if max_iter_num > 0:
+            max_iter_num -= 1
+    return cur_point, np.array(path)
+
+
+# In[1040]:
+
+
+def Adadelta(init_point, value_func, gradient_func, d_rate=0.9,
+            max_iter_num=-1, loss_eps=1e-9, eps=1e-9):
+    cur_point = init_point
+    cur_value = value_func(init_point)
+    extremum_found = False
+    e_g = np.zeros(init_point.shape)
+    e_dx = np.zeros(init_point.shape)
+    path = []
+    path.append(cur_point)
+    while not extremum_found and max_iter_num != 0:
+        grad_value = gradient_func(cur_point)
+        e_g = d_rate * e_g + (1 - d_rate) * grad_value**2
+        dx = -np.sqrt(e_dx + eps) / np.sqrt(e_g + eps) * grad_value
+        e_dx = d_rate * e_dx + (1 - d_rate) * dx**2
+        new_point = cur_point + dx
+        if (abs(value_func(new_point) - value_func(cur_point)) < loss_eps):
+            extremum_found = True
+        cur_point = new_point
+        path.append(cur_point)
+        if max_iter_num > 0:
+            max_iter_num -= 1
+    return cur_point, np.array(path)
+
+
+# In[1044]:
+
+
+def Adam(init_point, value_func, gradient_func,
+         alpha=0.9, beta1=0.9, beta2=0.999,
+         max_iter_num=-1, loss_eps=1e-9, eps=1e-8):
+    cur_point = init_point
+    cur_value = value_func(init_point)
+    extremum_found = False
+    moment1 = np.zeros(init_point.shape)
+    moment2 = np.zeros(init_point.shape)
+    t = 0
+    path = []
+    path.append(cur_point)
+    while not extremum_found and max_iter_num != 0:
+        t += 1
+        grad_value = gradient_func(cur_point)
+        moment1 = beta1 * moment1 + (1 - beta1) * grad_value
+        moment2 = beta2 * moment2 + (1 - beta2) * grad_value**2
+        mt1 = moment1 / (1 - beta1**t)
+        mt2 = moment2 / (1-beta2**t)
+        new_point = cur_point - alpha * mt1 / (np.sqrt(mt2) + eps)
+        if (abs(value_func(new_point) - value_func(cur_point)) < loss_eps):
+            extremum_found = True
+        cur_point = new_point
+        path.append(cur_point)
+        if max_iter_num > 0:
+            max_iter_num -= 1
+    return cur_point, np.array(path)
+
+
+# In order to show difference between implemented Gradient Descent algorithms we will use the following function:
+
+# In[964]:
+
+
+fig = plt.figure(figsize=(8, 5))
+ax = fig.add_subplot(111, projection='3d')
+
+X = np.linspace(-2, 2, 500)
+Y = np.linspace(-2, 2, 500)
+X, Y = np.meshgrid(X, Y)
+Z = 2*X**2 - 1.05*X**4 + X**6/6 + X*Y + Y**2
+plt.xlabel('x')
+plt.ylabel('y')
+plt.title('Three-hump camel function')
+surf = ax.plot_surface(X, Y, Z, cmap=cm.rainbow, antialiased=True)
+
+
+# In[976]:
+
+
+def CamelValue(point):
+    x = point[0, 0]
+    y = point[1, 0]
+    return 2*x**2 - 1.05*x**4 + x**6/6 + x*y + y**2
+
+def CamelGradient(point):
+    x = point[0, 0]
+    y = point[1, 0]
+    x_derivative = x**5 - 4.2*x**3 + 4*x + y
+    y_derivative = x + 2*y
+    return np.array([x_derivative, y_derivative]).reshape(2, 1)
+
+
+# In[1046]:
+
+
+init_point = np.array([-1.83, -1.79]).reshape(2, 1)
+adagrad_sol, route_adagrad = Adagrad(init_point, CamelValue,
+                                     CamelGradient, 0.5)
+momentum_ans, route_momentum = MomentumGD(init_point, 
+                                          CamelValue, CamelGradient, 
+                                          0.01, gamma=0.9)
+nesterov_ans, route_nesterov = NesterovGD(init_point,
+                                         CamelValue, CamelGradient,
+                                         0.01, gamma=0.9)
+rmsprop_ans, route_rmsprop = RMSprop(init_point,
+                                     CamelValue, CamelGradient,
+                                     0.01, gamma=0.9)
+adadelta_ans, route_adadelta = Adadelta(init_point, CamelValue,
+                                        CamelGradient, d_rate=0.9, max_iter_num=10000)
+adam_ans, route_adam = Adam(init_point, CamelValue,
+                                        CamelGradient, max_iter_num=10000)
+print(adam_ans)
+print('Iterations number:', route_adam.shape[0])
+
+
+# In[1047]:
+
+
+fig = plt.figure(figsize=(8, 6))
+plt.title('Contour plot')
+plt.contourf(X, Y, Z, 40)
+plt.plot(route_adagrad[:, 0], route_adagrad[:, 1], 'ro-', ms=1, lw=1, label='Adagrad GD path')
+plt.plot(route_nesterov[:, 0], route_nesterov[:, 1], 'go-', ms=1, lw=1, label='Nesterov GD path')
+plt.plot(route_momentum[:, 0], route_momentum[:, 1], 'yo-', ms=1, lw=1, label='Momentum GD path')
+plt.plot(route_rmsprop[:, 0], route_rmsprop[:, 1], 'mo-', ms=1, lw=1, label='RMSprop GD path')
+plt.plot(route_adadelta[:, 0], route_adadelta[:, 1], 'wo-', ms=1, lw=1, label='Adadelta GD path')
+plt.plot(route_adam[:, 0], route_adam[:, 1], 'co-', ms=1, lw=1, label='Adam GD path')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.legend(loc='best')
+plt.show()
+
