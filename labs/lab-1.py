@@ -62,7 +62,7 @@
 # ### Solutions
 # ---
 
-# In[51]:
+# In[6]:
 
 
 import numpy as np
@@ -422,7 +422,7 @@ plt.show()
 # $$f(x, y) = 3x^2+xy+2y^2-x-4y$$
 # though it isn't obvious, this function has a global minimum of -2 at $(x, y) = (0, 1)$. Let's have a look at the plot itself.
 
-# In[136]:
+# In[7]:
 
 
 from mpl_toolkits.mplot3d import Axes3D
@@ -448,7 +448,7 @@ surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
 # x+4y-4
 # \end{pmatrix}$$
 
-# In[137]:
+# In[8]:
 
 
 def FindGradient(point2D):
@@ -459,7 +459,7 @@ def FindGradient(point2D):
     return [x_derivative, y_derivative]
 
 
-# In[138]:
+# In[9]:
 
 
 def FunctionValue(point2D):
@@ -468,7 +468,7 @@ def FunctionValue(point2D):
     return 3*x**2 + x*y + 2*y**2 - x - 4*y
 
 
-# In[139]:
+# In[10]:
 
 
 def GradientDescent(init_point, value_func, gradient_func, lambda_,
@@ -492,7 +492,7 @@ def GradientDescent(init_point, value_func, gradient_func, lambda_,
     return cur_point, np.array(path)
 
 
-# In[140]:
+# In[11]:
 
 
 extremum, route = GradientDescent([-3, -3], FunctionValue,
@@ -502,7 +502,7 @@ print(extremum)
 
 # As we can see, the point found by `GradientDescent` doesn't differ much from $(0, 1)$. Let's plot contour lines and trace the descent path.
 
-# In[141]:
+# In[12]:
 
 
 fig = plt.figure(figsize=(7, 5))
@@ -518,7 +518,7 @@ plt.show()
 # #### 5.
 # The choice of $\lambda$ may be based on some figures while experimenting:
 
-# In[142]:
+# In[13]:
 
 
 # warning: the following code goes to infinite loop
@@ -531,7 +531,7 @@ print(route1[:10])
 
 # It is clear that when $\lambda \geq 1$ the algorithm doesn't converge: on each step the function value only increases. When setting $\lambda$ to rather small value, the iteration number increases significantly: 
 
-# In[143]:
+# In[14]:
 
 
 extremum2, route2 = GradientDescent([-3, -3], FunctionValue,
@@ -541,7 +541,7 @@ print('Steps number:', route2.shape[0])
 
 # So the possible approach could be bounding the maximum iteration limit to around 2000-3000 and choosing $\lambda \approx 0.1-0.01$. 
 
-# In[144]:
+# In[15]:
 
 
 extremum3, route3 = GradientDescent([-3, -3], FunctionValue,
@@ -565,7 +565,7 @@ print('Steps number:', route3.shape[0])
 # 
 # Let's firstly plot the function itself:
 
-# In[145]:
+# In[16]:
 
 
 fig = plt.figure(figsize=(8, 5))
@@ -587,7 +587,7 @@ surf = ax.plot_surface(X, Y, Z, cmap=cm.ocean, antialiased=True)
 # 200(y-x^2)
 # \end{pmatrix}$$
 
-# In[146]:
+# In[17]:
 
 
 def RosenbrockGradient(point2D):
@@ -598,7 +598,7 @@ def RosenbrockGradient(point2D):
     return [x_derivative, y_derivative]
 
 
-# In[147]:
+# In[18]:
 
 
 def RosenbrockValue(point2D):
@@ -607,14 +607,14 @@ def RosenbrockValue(point2D):
     return (1 - x)**2 + 100*(y - x**2)**2
 
 
-# In[148]:
+# In[19]:
 
 
 def InitRandomPoint(boundary):
     return np.random.uniform(-boundary, boundary, 2)
 
 
-# In[165]:
+# In[20]:
 
 
 #random_point = InitRandomPoint(1)
@@ -626,7 +626,7 @@ print(extremum)
 print('Iterations number:', route.shape[0])
 
 
-# In[166]:
+# In[21]:
 
 
 fig = plt.figure(figsize=(7, 5))
@@ -641,7 +641,7 @@ plt.show()
 
 # By plotting contour lines we can see the problem. On its very first steps the algorithm goes at right angle to the contour line. But then the shape of the route resembles the parabola $y = x^2$. Let's compare the first 15 steps of descent with the subsequent ones until the 1000th (it will be enough to clarify what's going on):
 
-# In[167]:
+# In[22]:
 
 
 fig = plt.figure(figsize=(7, 5))
@@ -813,7 +813,7 @@ plt.show()
 # 
 # $$\lambda = \frac{\sum_i(X_iw_k-Y)X_i\triangledown Q(w_k)}{\sum_i(X_i\triangledown Q(w_k))^2}$$
 
-# In[128]:
+# In[23]:
 
 
 def FindBestLambda(X, Y, grad, w):
@@ -891,7 +891,7 @@ plt.show()
 
 # Let's import train dataset, split it into two subsets in order to check accuracy via holdout validation and prepare $X_{train}$ and $Y_{train}$ matrixes so we can use gradient descent.
 
-# In[434]:
+# In[24]:
 
 
 import pandas as pd
@@ -900,7 +900,7 @@ data01 = data[data['label'].isin((0, 1))]
 np_data01 = data01.values
 
 
-# In[435]:
+# In[25]:
 
 
 from sklearn.model_selection import train_test_split
@@ -908,7 +908,7 @@ from sklearn import metrics
 from sklearn.utils import shuffle
 
 
-# In[899]:
+# In[26]:
 
 
 X = np_data01[:,1:]
@@ -937,13 +937,13 @@ Y_test = Y_test * 2 - 1
 # 
 # $$\triangledown Q(w) = \frac{1}{l}X^T \big( -Y \frac{e^{-YXw}}{1+e^{-YXw}} \big) $$
 
-# In[900]:
+# In[27]:
 
 
 import time
 
 
-# In[901]:
+# In[28]:
 
 
 def LogValue(X, Y, w):
@@ -975,7 +975,7 @@ def NextBatch(X, Y, batch_size):
         begin = end
 
 
-# In[902]:
+# In[29]:
 
 
 def StohasticGD(init_coef, X, Y, value_func, gradient_func, batch_size,
@@ -995,7 +995,7 @@ def StohasticGD(init_coef, X, Y, value_func, gradient_func, batch_size,
     return cur_coef, np.array(path), time.time() - start
 
 
-# In[903]:
+# In[30]:
 
 
 def NormalTruncatedCoef(size):
@@ -1008,7 +1008,7 @@ def NormalTruncatedCoef(size):
     return np.array(result).reshape((size, 1))
 
 
-# In[904]:
+# In[31]:
 
 
 init_coef = NormalTruncatedCoef(X_train.shape[1])
@@ -1021,7 +1021,7 @@ w_sgd, route, time_taken = StohasticGD(init_coef, X_train, Y_train, LogValue,
 # 
 # The natural way to define whether the picture is 1 or not is to evaluate the probability mentioned above and to compare it with 0.5. If it is more than 0.5 then we state that the picture is 1, otherwise it's 0.
 
-# In[905]:
+# In[32]:
 
 
 def PredictLabels(X, w):
@@ -1033,14 +1033,14 @@ def PredictLabels(X, w):
     return probability
 
 
-# In[906]:
+# In[33]:
 
 
 Y_predicted = PredictLabels(X_test, w_sgd)
 print(metrics.accuracy_score(Y_predicted, Y_test))
 
 
-# In[907]:
+# In[34]:
 
 
 time_taken
@@ -1048,14 +1048,14 @@ time_taken
 
 # Let's play with parameters and check the dependance of the time and accuracy with the batch size. In general, when batch size is relatively small, the time increases, while the accuracy is high. On the contrary, with increasing batch size we have the decrease of time taken by the algorithm while the accuracy is lower.
 
-# In[931]:
+# In[130]:
 
 
 #new_init_coef = NormalTruncatedCoef(X_train.shape[1])
 new_init_coef = np.zeros((X_train.shape[1], 1))
 
 
-# In[932]:
+# In[131]:
 
 
 sgd1, route1, time_1 = StohasticGD(new_init_coef, X_train, Y_train, LogValue, LogGradient, 1)
@@ -1066,7 +1066,7 @@ sgd500, route500, time_500 = StohasticGD(new_init_coef, X_train, Y_train, LogVal
 sgd1000, route1000, time_1000 = StohasticGD(new_init_coef, X_train, Y_train, LogValue, LogGradient, 1000)
 
 
-# In[933]:
+# In[37]:
 
 
 Y_predicted_1 = PredictLabels(X_test, sgd1)
@@ -1077,7 +1077,7 @@ Y_predicted_500 = PredictLabels(X_test, sgd500)
 Y_predicted_1000 = PredictLabels(X_test, sgd1000)
 
 
-# In[934]:
+# In[38]:
 
 
 fig, (pl1, pl2) = plt.subplots(1, 2, figsize=(15, 5))
@@ -1101,7 +1101,7 @@ plt.show()
 
 # The number of epochs is 10 as it provides better accuracy with the resonable amount of time.
 
-# In[935]:
+# In[39]:
 
 
 def ExpSmoothing(loss, gamma):
@@ -1111,7 +1111,7 @@ def ExpSmoothing(loss, gamma):
     return new_loss
 
 
-# In[936]:
+# In[40]:
 
 
 loss1 = [LogValue(X_test, Y_test, w) for w in route1]
@@ -1122,7 +1122,7 @@ loss250 = [LogValue(X_train, Y_train, w) for w in route250]
 #loss1000 = [LogValue(X_test, Y_test, w) for w in route1000]
 
 
-# In[946]:
+# In[41]:
 
 
 exp_loss1 = ExpSmoothing(loss1, 0.9)
@@ -1133,7 +1133,7 @@ exp_loss250 = ExpSmoothing(loss250, 0.9)
 #exp_loss1000 = ExpSmoothing(loss1000, 0.6)
 
 
-# In[951]:
+# In[42]:
 
 
 fig, (pl1, pl2) = plt.subplots(1, 2, figsize=(15, 5))
@@ -1162,7 +1162,7 @@ plt.show()
 # 2. Use momentum method and compare pathes.
 # 3. How do you choose $\gamma$?
 
-# In[813]:
+# In[43]:
 
 
 def Func2Value(point):
@@ -1216,7 +1216,7 @@ def NaiveGD(init_point, value_func, gradient_func, lambda_,
     return cur_point, np.array(path)
 
 
-# In[820]:
+# In[46]:
 
 
 naive_sol, route_naive = NaiveGD(np.array([-3, 3]).reshape(2,1), Func2Value,
@@ -1225,10 +1225,10 @@ momentum_sol, route_momentum = MomentumGD(np.array([-3, 3]).reshape(2,1), Func2V
                                   Func2Grad, 0.01)
 
 print(naive_sol, end='\n'+'='*20+'\n')
-print(gdsol)
+print(momentum_sol)
 
 
-# In[828]:
+# In[47]:
 
 
 fig = plt.figure(figsize=(7, 5))
@@ -1248,7 +1248,7 @@ plt.legend(loc='best')
 plt.show()
 
 
-# In[829]:
+# In[48]:
 
 
 momentum_sol_2, route_momentum_2 = MomentumGD(np.array([-3, 3]).reshape(2,1), Func2Value,
@@ -1257,7 +1257,7 @@ momentum_sol_3, route_momentum_3 = MomentumGD(np.array([-3, 3]).reshape(2,1), Fu
                                   Func2Grad, 0.01, gamma=0.95)
 
 
-# In[830]:
+# In[49]:
 
 
 plt.title('Contour plot')
@@ -1281,7 +1281,7 @@ plt.show()
 # 1. Compare this method and previous with Rosenbrock function.
 # 2. Plot traces of both algorithms.
 
-# In[853]:
+# In[50]:
 
 
 def RosenbrockGradient(point):
@@ -1317,7 +1317,7 @@ def NesterovGD(init_point, value_func, gradient_func, lambda_,
     return cur_point, np.array(path)
 
 
-# In[866]:
+# In[51]:
 
 
 init_point = np.array([-7, 3]).reshape(2, 1)
@@ -1329,7 +1329,7 @@ nesterov_ans, route_nesterov = NesterovGD(init_point,
                                          0.00001, gamma=0.9)
 
 
-# In[870]:
+# In[52]:
 
 
 X = np.linspace(-12, 12, 1000)
@@ -1372,7 +1372,7 @@ plt.show()
 # 1. [Adadelta (2012)](https://arxiv.org/pdf/1212.5701.pdf)
 # 2. [Adam (2015)](https://arxiv.org/pdf/1412.6980.pdf)
 
-# In[975]:
+# In[53]:
 
 
 def Adagrad(init_point, value_func, gradient_func, lambda_,
@@ -1396,7 +1396,7 @@ def Adagrad(init_point, value_func, gradient_func, lambda_,
     return cur_point, np.array(path)
 
 
-# In[1039]:
+# In[54]:
 
 
 def RMSprop(init_point, value_func, gradient_func, lambda_, gamma=0.9,
@@ -1420,7 +1420,7 @@ def RMSprop(init_point, value_func, gradient_func, lambda_, gamma=0.9,
     return cur_point, np.array(path)
 
 
-# In[1040]:
+# In[98]:
 
 
 def Adadelta(init_point, value_func, gradient_func, d_rate=0.9,
@@ -1447,7 +1447,7 @@ def Adadelta(init_point, value_func, gradient_func, d_rate=0.9,
     return cur_point, np.array(path)
 
 
-# In[1044]:
+# In[244]:
 
 
 def Adam(init_point, value_func, gradient_func,
@@ -1480,7 +1480,7 @@ def Adam(init_point, value_func, gradient_func,
 
 # In order to show difference between implemented Gradient Descent algorithms we will use the following function:
 
-# In[964]:
+# In[57]:
 
 
 fig = plt.figure(figsize=(8, 5))
@@ -1496,7 +1496,7 @@ plt.title('Three-hump camel function')
 surf = ax.plot_surface(X, Y, Z, cmap=cm.rainbow, antialiased=True)
 
 
-# In[976]:
+# In[58]:
 
 
 def CamelValue(point):
@@ -1512,7 +1512,7 @@ def CamelGradient(point):
     return np.array([x_derivative, y_derivative]).reshape(2, 1)
 
 
-# In[1046]:
+# In[102]:
 
 
 init_point = np.array([-1.83, -1.79]).reshape(2, 1)
@@ -1531,11 +1531,11 @@ adadelta_ans, route_adadelta = Adadelta(init_point, CamelValue,
                                         CamelGradient, d_rate=0.9, max_iter_num=10000)
 adam_ans, route_adam = Adam(init_point, CamelValue,
                                         CamelGradient, max_iter_num=10000)
-print(adam_ans)
-print('Iterations number:', route_adam.shape[0])
+# print(adam_ans)
+# print('Iterations number:', route_adam.shape[0])
 
 
-# In[1047]:
+# In[103]:
 
 
 fig = plt.figure(figsize=(8, 6))
@@ -1549,6 +1549,195 @@ plt.plot(route_adadelta[:, 0], route_adadelta[:, 1], 'wo-', ms=1, lw=1, label='A
 plt.plot(route_adam[:, 0], route_adam[:, 1], 'co-', ms=1, lw=1, label='Adam GD path')
 plt.xlabel('x')
 plt.ylabel('y')
+plt.legend(loc='best')
+plt.show()
+
+
+# In[61]:
+
+
+import io
+import base64
+from IPython.display import HTML, clear_output
+from matplotlib import animation
+
+
+# In[125]:
+
+
+fig = plt.figure(figsize=(10, 10))
+ax = plt.axes()
+plt.contourf(X, Y, Z, 40)
+
+adagrad_l, = ax.plot([], [], 'r', lw=2, label='Adagrad')
+nesterov_l, = ax.plot([], [], 'g', lw=2, label='Nesterov')
+momentum_l, = ax.plot([], [], 'y', lw=2, label='Momentum')
+rmsprop_l, = ax.plot([], [], 'm', lw=2, label='RMSprop')
+adadelta_l, = ax.plot([], [], 'w', lw=2, label='Adadelta')
+adam_l, = ax.plot([], [], 'c', lw=2, label='Adam')
+plt.legend()
+
+lines = [adagrad_l,
+         nesterov_l,
+         momentum_l,
+         rmsprop_l,
+         adadelta_l,
+         adam_l]
+
+traces = [route_adagrad,
+          route_nesterov,
+          route_momentum,
+          route_rmsprop,
+          route_adadelta,
+          route_adam]
+
+info_text = ax.text(0.05, 0.95, '', fontsize=14, transform=ax.transAxes,
+                    bbox=dict(facecolor='white', alpha=1))
+def init():
+    for l in lines:
+        l.set_data([], [])
+    return lines
+
+def animate(i):
+    if (i < 300):
+        for line, trace in zip(lines, traces):
+            print('Frame %d'%i)
+            clear_output()
+            line.set_data(trace[0:min(i, trace.shape[0]), 0],
+                          trace[0:min(i, trace.shape[0]), 1])
+    else:
+        info_text.set_text('Speed x20')
+        for line, trace in zip(lines, traces):
+            print('Frame %d'%i)
+            clear_output()
+            if (line == adadelta_l):
+                line.set_data(trace[0:min(300 + (i - 300) * 20, trace.shape[0]), 0],
+                              trace[0:min(300 + (i - 300) * 20, trace.shape[0]), 1])
+            else:
+                line.set_data(trace[0:min(i, trace.shape[0]), 0],
+                              trace[0:min(i, trace.shape[0]), 1])
+    return lines
+
+anim = animation.FuncAnimation(fig, animate, init_func=init,
+                               frames=600, interval=200, blit=True)
+anim.save('animation.mp4', fps=30)
+plt.show()
+
+
+# In[126]:
+
+
+video = io.open('animation.mp4', 'r+b').read()
+encoded = base64.b64encode(video)
+HTML(data='''
+<video controls>
+    <source src="data:video/mp4;base64,{0}" type="video/mp4" />
+</video>'''.format(encoded.decode('ascii')))
+
+
+# As "Adam" performed better than others, we'll try using it to learn on MNIST dataset.
+
+# In[252]:
+
+
+def AdamMNIST(init_point, X, Y, value_func, gradient_func,
+         alpha=0.01, beta1=0.9, beta2=0.999,
+         max_iter_num=-1, loss_eps=1e-8, eps=1e-8):
+    cur_point = init_point
+    cur_value = value_func(X, Y, init_point)
+    extremum_found = False
+    moment1 = np.zeros(init_point.shape)
+    moment2 = np.zeros(init_point.shape)
+    t = 0
+    path = []
+    path.append(cur_point)
+    while not extremum_found and max_iter_num != 0:
+        t += 1
+        grad_value = gradient_func(X, Y, cur_point)
+        moment1 = beta1 * moment1 + (1 - beta1) * grad_value
+        moment2 = beta2 * moment2 + (1 - beta2) * grad_value**2
+        mt1 = moment1 / (1 - beta1**t)
+        mt2 = moment2 / (1-beta2**t)
+        new_point = cur_point - alpha * mt1 / (np.sqrt(mt2) + eps)
+        if (abs(value_func(X, Y, new_point) - value_func(X, Y, cur_point)) < loss_eps):
+            extremum_found = True
+        cur_point = new_point
+        path.append(cur_point)
+        if max_iter_num > 0:
+            max_iter_num -= 1
+    return cur_point, np.array(path)
+
+
+# In[253]:
+
+
+def LogValue(X, Y, w):
+    inner_part = -Y * X.dot(w) 
+    loss = 0.
+    for i in range(inner_part.shape[0]):
+        if (inner_part[i,0] > 20):
+            loss += inner_part[i, 0]
+        else:
+            loss += np.log(1 + np.exp(inner_part[i, 0]))
+    loss /= Y.shape[0]
+    return loss
+
+def LogGradient(X, Y, w):
+    value = -Y * X.dot(w)
+    inner_part = np.zeros(value.shape)
+    for i in range(value.shape[0]):
+        if value[i, 0] > 20:
+            inner_part[i, 0] = - Y[i, 0]
+        else:
+            inner_part[i, 0] = -Y[i, 0] * np.exp(value[i, 0]) / (1 + np.exp(value[i, 0]))
+    inner_part = X.T.dot(inner_part)
+    return inner_part / Y.shape[0]
+
+def PredictLabels(X, w):
+    value = -X.dot(w)
+    for i in range(value.shape[0]):
+        if value[i, 0] > 20:
+            value[i, 0] = 1e18
+        elif value[i, 0] < -20:
+            value[i, 0] = 1e-18
+        else:
+            value[i, 0] = np.exp(value[i, 0])
+    probability = 1 / (1 + value)
+    for i in range(probability.shape[0]):
+        p = probability[i, 0]
+        probability[i, 0] = 1 if p > 0.5 else -1
+    return probability
+
+
+# In[254]:
+
+
+init_coef = np.zeros((X_train.shape[1], 1))
+adam_sol_mnist, route_adam_mnist = AdamMNIST(init_coef, X_train, Y_train, LogValue, LogGradient, max_iter_num=100)
+
+
+# In[256]:
+
+
+Y_adam = PredictLabels(X_test, adam_sol_mnist)
+print('Accuracy is', metrics.accuracy_score(Y_adam, Y_test))
+
+
+# In[257]:
+
+
+loss_adam = [LogValue(X_test, Y_test, w) for w in route_adam_mnist]
+
+
+# In[258]:
+
+
+fig = plt.figure(figsize=(7, 5))
+plt.grid(True)
+plt.plot(range(len(loss_adam)), loss_adam, 'k', lw=1, label = 'Loss')
+plt.title('Adam GD on MNIST dataset')
+plt.xlabel('step')
+plt.ylabel('loss')
 plt.legend(loc='best')
 plt.show()
 
