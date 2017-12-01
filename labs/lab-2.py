@@ -26,7 +26,7 @@
 # There are [several approaches](https://en.wikipedia.org/wiki/Multiclass_classification) to solve the problem of multi-class classification. For example [reduction](https://en.wikipedia.org/wiki/Multiclass_classification#Transformation_to_Binary) of problem to binary classifier or [modification](https://en.wikipedia.org/wiki/Support_vector_machine#Multiclass_SVM) of the known model. However we are interested in approaches that is applied in neural networks.
 # 
 # For each class $c \in 1, \dots, |C|$ we have an individual row $w_i$ of matrix $W$. Then the probability of $x$ belonging to a particular class is equal to
-# $$p_i = \frac{\exp(w^T_ix)}{\sum_j \exp(w^T_jx)}.$$
+# $$p_i = \frac{\exp(w_i^Tx)}{\sum_j \exp(w_j^Tx)}.$$
 # This is nothing, but [softmax](https://en.wikipedia.org/wiki/Softmax_function) function of $Wx$.
 # $$(p_1, \dots, p_{|C|}) = \text{softmax}(Wx).$$
 # 
@@ -40,6 +40,71 @@
 # 3. Train linear multi-label classifier for [mnist](https://www.kaggle.com/c/digit-recognizer) dataset with TensorFlow (possible, [this tutorial](https://www.tensorflow.org/get_started/mnist/pros) can help you).
 # 4. Chek accuracy on train and validation sets.
 # 5. Use a local [TensorBoard instance](https://www.tensorflow.org/get_started/graph_viz) to visualize resulted graph (no need to include in lab).
+
+# ## Solutions
+# -----
+# 
+# Let's find $\frac{dQ}{dW}$. Firstly, we rewrite the loss funtion in more convinient way:
+# 
+# $$Q(W) = -\frac{1}{\mathcal{l}}\sum_{j=1}^{l}\sum_{i=1}^{k} [y^{(j)} = i] \cdot \ln(\frac{\exp(w_i^Tx^j)}{\sum_l \exp(w_l^Tx^j)})$$
+# 
+# Here we use the following notation: $l$ is the number of elements in a set, $k$ is the number of labels and $y$ is the vector-string of labels such that $y^{(j)}$ corresponds to the element $j$. We assume that $W$ is a parameter-matrix, where vectors $w_i$ are stacked in rows. Therefore vectors $x_i$, which represent the attributes of $i$-th element, are stacked in cols in matrix $X$.
+# 
+# It's easier to come up with the solution by differentiating the function respectively to the $w_i$ row:
+# 
+# $$\frac{\partial Q}{\partial w_i} = -\frac{1}{\mathcal{l}} \big( \sum_{j=1}^{l}\big[y^{(j)} = i\big] \frac{\sum_l \exp(w_l^Tx^j)}{\exp(w_i^Tx^j)}  \cdot \frac{\sum_l \exp(w_l^Tx^j) \cdot \exp(w_i^Tx^{(j)})x^{(j)} - (\exp(w_i^Tx^{(j)})^2x^{(j)}} {(\sum_l \exp(w_l^Tx^j))^2} \big)$$
+# 
+# 
+# $$\frac{\partial Q}{\partial w_i} = -\frac{1}{\mathcal{l}} \big( \sum_{j=1}^{l} x^{(j)}\big( [y^{(j)} = i] - \frac{\exp(w_i^Tx^j)}{\sum_l \exp(w_l^Tx^j)}\big)\big)$$
+# 
+# Actually, $\frac{\partial Q}{\partial w_i}$ is itself a vector such that it's $j$-th element is a partial derivative $\frac{\partial Q}{\partial w_{ij}}$. In order to rewrite the formula in a matrix form we introduce a new matrix $Y : Y_{ij} = \left\{
+# \begin{aligned}
+# 1&, \text{if j-th element has i-th label} \\
+# 0&, \text{otherwise}
+# \end{aligned}
+# \right.$
+# 
+# Using $Y$, we can finally write the $\frac{dQ}{dW}$:
+# 
+# $$\frac{dQ}{dW} = -\frac{1}{\mathcal{l}} \big[ YX^T - PX^T\big]$$
+# 
+# Where $P$ is a matrix $WX$ with the softmax function being applied.
+
+# In[1]:
+
+
+import tensorflow as tf
+import numpy as np
+import numpy.linalg as nla
+import matplotlib.pyplot as plt
+import matplotlib.axes as axes
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn import metrics
+from sklearn.utils import shuffle
+get_ipython().run_line_magic('matplotlib', 'inline')
+
+mnist_data = pd.read_csv('train.csv', sep=',')
+
+
+# In[74]:
+
+
+data = mnist_data.values
+samplesN = 5
+samples = np.random.randint(0, data.shape[0], samplesN**2)
+f, ax  = plt.subplots(samplesN, samplesN)
+f.set_size_inches(7, 7)
+for i, s in enumerate(samples):
+    ax[i // samplesN, i % samplesN].axis('off')
+    ax[i // samplesN, i % samplesN].imshow(data[s, 1:].reshape(28, 28))
+
+
+# In[ ]:
+
+
+# cell for tensorflow classifier
+
 
 # Let's briefly touch on themes of regularization. As was discussed before, there are different approaches. We focus on the modification of loss function.
 # 
