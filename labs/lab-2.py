@@ -85,12 +85,12 @@ from sklearn.utils import shuffle
 get_ipython().run_line_magic('matplotlib', 'inline')
 
 mnist_data = pd.read_csv('train.csv', sep=',')
-
-
-# In[74]:
-
-
 data = mnist_data.values
+
+
+# In[4]:
+
+
 samplesN = 5
 samples = np.random.randint(0, data.shape[0], samplesN**2)
 f, ax  = plt.subplots(samplesN, samplesN)
@@ -100,10 +100,68 @@ for i, s in enumerate(samples):
     ax[i // samplesN, i % samplesN].imshow(data[s, 1:].reshape(28, 28))
 
 
-# In[ ]:
+# Let's now implement simple linear multi-label classifier using `Tensorflow`:
+
+# In[2]:
 
 
-# cell for tensorflow classifier
+def NextBatch(X, Y, batch_size):
+    begin = 0
+    x_size = X.shape[0]
+    while begin < x_size:
+        end = min(begin + batch_size, x_size)
+        yield X[begin:end], Y[begin:end]
+        begin = end
+        
+mnist_labels = data[:, 0]
+mnist_set = data[:, 1:]
+
+x_train, x_test, y_train, y_test = train_test_split(mnist_set, mnist_labels,
+                                                    test_size=0.15, random_state=30)
+
+
+# In[5]:
+
+
+x = tf.placeholder(tf.float32, shape=[None, 784])
+y_ = tf.placeholder(tf.int32, shape=[None])
+W = tf.Variable(tf.truncated_normal([784,10], stddev=0.05))
+b = tf.Variable(tf.truncated_normal([10], stddev=0.05))
+y = tf.matmul(x,W) + b
+cross_entropy = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y_, logits=y))
+train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
+correct_prediction = tf.equal(tf.argmax(y, 1, output_type=tf.int32), y_)
+accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
+
+# In[3]:
+
+
+from IPython.display import clear_output
+
+
+# In[6]:
+
+
+BATCH_SIZE = 60
+EPOCH_NUM = 5
+
+with tf.Session() as sess:
+    writer = tf.summary.FileWriter("logs_tensorboard/", sess.graph)
+    sess.run(tf.global_variables_initializer())
+    for epoch in range(EPOCH_NUM):
+        iter_num = 0
+        x_train, y_train = shuffle(x_train, y_train)
+        for x_batch, y_batch in NextBatch(x_train, y_train, BATCH_SIZE):
+            train_step.run(feed_dict={x: x_batch, y_: y_batch})
+            iter_num += 1
+            train_accuracy = accuracy.eval(feed_dict={x: x_batch, y_: y_batch})
+            print('step %d, epoch %d, training accuracy %g' % (iter_num, epoch, train_accuracy))
+            clear_output()
+
+    print('accuracy on test %g' % accuracy.eval(feed_dict={x: x_test, y_: y_test}))
+    print('accuracy on train %g' % accuracy.eval(feed_dict={x: x_train, y_: y_train}))
+    writer.close()
 
 
 # Let's briefly touch on themes of regularization. As was discussed before, there are different approaches. We focus on the modification of loss function.
