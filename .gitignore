@@ -1,4 +1,4 @@
 # ignore jupyter checkpoints directory
 .ipynb_checkpoints/
 *.csv
-./labs/logs_tensorboard
+/labs/logs_tensorboard
