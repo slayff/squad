@@ -70,7 +70,7 @@
 # 
 # Where $P$ is a matrix $WX$ with the softmax function being applied.
 
-# In[1]:
+# In[36]:
 
 
 import tensorflow as tf
@@ -102,7 +102,7 @@ for i, s in enumerate(samples):
 
 # Let's now implement simple linear multi-label classifier using `Tensorflow`:
 
-# In[2]:
+# In[50]:
 
 
 def NextBatch(X, Y, batch_size):
@@ -116,11 +116,16 @@ def NextBatch(X, Y, batch_size):
 mnist_labels = data[:, 0]
 mnist_set = data[:, 1:]
 
+#Let's preprocess data:
+mnist_set = mnist_set - np.mean(mnist_set, axis=0, dtype=np.float64)
+mnist_set /= 256.
+#mnist_set = mnist_set / (np.std(mnist_set, axis=0, dtype=np.float64) + 1e-20)
+
 x_train, x_test, y_train, y_test = train_test_split(mnist_set, mnist_labels,
                                                     test_size=0.15, random_state=30)
 
 
-# In[5]:
+# In[23]:
 
 
 x = tf.placeholder(tf.float32, shape=[None, 784])
@@ -134,20 +139,20 @@ correct_prediction = tf.equal(tf.argmax(y, 1, output_type=tf.int32), y_)
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 
-# In[3]:
+# In[6]:
 
 
 from IPython.display import clear_output
 
 
-# In[6]:
+# In[53]:
 
 
-BATCH_SIZE = 60
-EPOCH_NUM = 5
+BATCH_SIZE = 100
+EPOCH_NUM = 10
 
 with tf.Session() as sess:
-    writer = tf.summary.FileWriter("logs_tensorboard/", sess.graph)
+    writer = tf.summary.FileWriter("logs_tensorboard/run_" + str(RUN_NUM) + "/", sess.graph)
     sess.run(tf.global_variables_initializer())
     for epoch in range(EPOCH_NUM):
         iter_num = 0
@@ -176,6 +181,94 @@ with tf.Session() as sess:
 # 2. Plot matrix of weights.
 # 3. Which pixels have zero weights? What does it mean?
 # 4. Have you improved accuracy on validation?
+
+# In[87]:
+
+
+RUN_NUM = 0
+
+
+# In[123]:
+
+
+g2 = tf.Graph()
+LAMBDA_1 = 1e-5
+LAMBDA_2 = 1e-5
+with g2.as_default():
+    x = tf.placeholder(tf.float32, shape=[None, 784])
+    y_ = tf.placeholder(tf.int32, shape=[None])
+    W = tf.Variable(tf.truncated_normal([784,10], stddev=0.05))
+    b = tf.Variable(tf.truncated_normal([10], stddev=0.05))
+    w_h = tf.summary.histogram("weights", W)
+    b_h = tf.summary.histogram("biases", b)
+
+    y = tf.matmul(x,W) + b
+    penalty_l1 = tf.reduce_sum(tf.abs(W))
+    penalty_l2 = tf.reduce_sum(tf.abs(W**2))
+    cross_entropy = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y_,
+                                                                                  logits=y)) + \
+                                    LAMBDA_1 * penalty_l1 + LAMBDA_2 * penalty_l2
+    tf.summary.scalar("loss_function", cross_entropy)
+    
+    train_step = tf.train.AdamOptimizer().minimize(cross_entropy)
+    correct_prediction = tf.equal(tf.argmax(y, 1, output_type=tf.int32), y_)
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    merged = tf.summary.merge_all()
+
+
+# In[130]:
+
+
+BATCH_SIZE = 100
+EPOCH_NUM = 10
+saver = tf.train.Saver({'w_predicted': W})
+with tf.Session(graph=g2) as sess:
+    RUN_NUM += 1
+    writer = tf.summary.FileWriter("logs_tensorboard/run_" + str (RUN_NUM) + "/", sess.graph)
+    sess.run(tf.global_variables_initializer())
+    iter_num = 0
+    for epoch in range(EPOCH_NUM):
+        x_train, y_train = shuffle(x_train, y_train)
+        for x_batch, y_batch in NextBatch(x_train, y_train, BATCH_SIZE):
+            train_step.run(feed_dict={x: x_batch, y_: y_batch})
+            iter_num += 1
+            summary = sess.run(merged, feed_dict={x: x_batch, y_:y_batch})
+            writer.add_summary(summary, iter_num)
+            train_accuracy = accuracy.eval(feed_dict={x: x_batch, y_: y_batch})
+            print('step %d, epoch %d, training accuracy %g' % (iter_num, epoch, train_accuracy))
+            clear_output()
+            
+    save_path = saver.save(sess, "logs_tensorboard/models/model.ckpt")
+    print('accuracy on test %g' % accuracy.eval(feed_dict={x: x_test, y_: y_test}))
+    print('accuracy on train %g' % accuracy.eval(feed_dict={x: x_train, y_: y_train}))
+    writer.close()
+
+
+# In[181]:
+
+
+with tf.Session(graph=g2) as sess:
+    sess.run(tf.global_variables_initializer())
+    saver.restore(sess, "logs_tensorboard/models/model.ckpt")
+    w_predicted = sess.run(W)
+    samplesN = 10
+    samples = range(samplesN + 2)
+    f, ax  = plt.subplots(4, 3)
+    f.set_size_inches(10, 10)
+    
+    for i in samples:
+        ax[i // 3, i % 3].axis('off')
+        if (i < 10):
+            ax[i // 3, i % 3].imshow(w_predicted[:, i].reshape(28, 28), cmap='magma')
+            ax[i // 3, i % 3].set_title('number %d' % i)
+            
+
+
+# Several test showed that small $\lambda$ leads to a strong underfitting with accuracy of about $0.2$. The parameter $\lambda = 0,00001$ gives approximately the same accuracy rate as without regularization (a bit smaller on both train and validation sets, to be precise).
+# 
+# As we have plot the "images" of weights, we can say why certain pixels are lighter and therefore have almost zero weight. These pixels (weights) are responsible for evaluating whether the number is in correct class - we can see, that the shape of light pixels resembles the numbers. If the test picture is the number of the current label, then we'll compute loss by multiplying pixels by weights and that loss will be adequately small.
+# 
+# On the other hand, we can see dark areas on these pictures. It's how our model knows that the current test picture has definetely another label - when computing loss, we will get reasonably high values.
 
 # ### 2. Universal approximation theorem
 # 
