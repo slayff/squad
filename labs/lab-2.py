@@ -70,7 +70,7 @@
 # 
 # Where $P$ is a matrix $WX$ with the softmax function being applied.
 
-# In[36]:
+# In[2]:
 
 
 import tensorflow as tf
@@ -88,7 +88,7 @@ mnist_data = pd.read_csv('train.csv', sep=',')
 data = mnist_data.values
 
 
-# In[4]:
+# In[3]:
 
 
 samplesN = 5
@@ -102,7 +102,7 @@ for i, s in enumerate(samples):
 
 # Let's now implement simple linear multi-label classifier using `Tensorflow`:
 
-# In[50]:
+# In[6]:
 
 
 def NextBatch(X, Y, batch_size):
@@ -139,7 +139,7 @@ correct_prediction = tf.equal(tf.argmax(y, 1, output_type=tf.int32), y_)
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 
-# In[6]:
+# In[8]:
 
 
 from IPython.display import clear_output
@@ -326,6 +326,160 @@ with tf.Session(graph=g2) as sess:
 # 6. Show your best model.
 # 7. How does quality change with adding layers. Prove your words, train model for 2, 3, 5, 7 and 10 layers.
 # 8. Using backpropagation find optimal  digit 8 for your net.*
+
+# In[19]:
+
+
+def TrainModel(
+    layers_num=2,
+    layers_sizes=[784, 10],
+    activation_f='sigmoid',
+    l1_reg_coef=0.,
+    l2_reg_coef=0.,
+    batch_size=100,
+    epoch_num=10
+):
+    if layers_num > len(layers_sizes):
+        layers_sizes = [784]
+        k = layers_num - 1
+        while layers_sizes[-1] % 2 == 0 and k - 1:
+            layers_sizes.append(layers_sizes[-1] // 2)
+            k -= 1
+        while k - 1:
+            layers_sizes.append(layers_sizes[-1])
+            k -= 1
+        layers_sizes.append(10)
+    elif len(layers_sizes) > layers_num:
+        layers_num = len(layers_sizes)
+            
+    g_ = tf.Graph()
+    with g_.as_default():
+        activation_dict = {'sigmoid' : tf.sigmoid,
+                           'relu' : tf.nn.relu,
+                           'tanh' : tf.nn.tanh,
+                           'leakyrelu': tf.nn.leaky_relu
+                          }
+        activation = activation_dict[activation_f]
+        x = tf.placeholder(tf.float32, shape=[None, 784])
+        y_ = tf.placeholder(tf.int32, shape=[None])
+        layers_list = [x]
+        for i in range(1, layers_num):
+            layers_list.append(tf.layers.dense(layers_list[i - 1],
+                                              layers_sizes[i - 1],
+                                              activation=activation,
+                                              kernel_initializer=tf.truncated_normal_initializer(
+                                                  stddev=0.1),
+                                              bias_initializer=tf.truncated_normal_initializer(
+                                                  stddev=0.1),
+                                              activity_regularizer=tf.contrib.layers.l1_l2_regularizer(
+                                              l1_reg_coef, l2_reg_coef)
+                                             ))
+        y = tf.layers.dense(layers_list[-1],
+                            layers_sizes[-1],
+                            kernel_initializer=tf.truncated_normal_initializer(
+                                        stddev=0.1),
+                            bias_initializer=tf.truncated_normal_initializer(
+                                        stddev=0.1),
+                            activity_regularizer=tf.contrib.layers.l1_l2_regularizer(
+                                        l1_reg_coef, l2_reg_coef)
+                           )
+        cross_entropy = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y_,
+                                                                                      logits=y))
+        train_step = tf.train.AdamOptimizer().minimize(cross_entropy)
+        correct_prediction = tf.equal(tf.argmax(y, 1, output_type=tf.int32), y_)
+        accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    with tf.Session(graph=g_) as sess:
+        sess.run(tf.global_variables_initializer())
+        iter_num = 0
+        for epoch in range(epoch_num):
+            x_train_, y_train_ = shuffle(x_train, y_train)
+            for x_batch, y_batch in NextBatch(x_train_, y_train_, batch_size):
+                train_step.run(feed_dict={x: x_batch, y_: y_batch})
+                iter_num += 1
+                train_accuracy = accuracy.eval(feed_dict={x: x_batch, y_: y_batch})
+                print('step %d, epoch %d, training accuracy %g' % (iter_num, epoch, train_accuracy))
+                clear_output()
+        print('Testing model with', activation_f, 'nonlinearity')
+        print('Layers are used :', layers_sizes)
+        print('accuracy on train %g' % accuracy.eval(feed_dict={x: x_train, y_: y_train}))
+        print('accuracy on test %g' % accuracy.eval(feed_dict={x: x_test, y_: y_test}))
+
+
+# In[197]:
+
+
+TrainModel(layers_num=2, activation_f='sigmoid', l1_reg_coef=1e-3, l2_reg_coef=1e-3)
+
+
+# In[198]:
+
+
+TrainModel(layers_num=2, activation_f='leakyrelu', l1_reg_coef=1e-3, l2_reg_coef=1e-3)
+
+
+# In[199]:
+
+
+TrainModel(layers_sizes=[784, 392, 196, 10], activation_f='leakyrelu', l1_reg_coef=1e-5, l2_reg_coef=1e-5)
+
+
+# In[203]:
+
+
+TrainModel(layers_sizes=[784, 392, 100, 10], activation_f='tanh')
+
+
+# In[204]:
+
+
+TrainModel(layers_sizes=[784, 196, 10], activation_f='relu', batch_size=60, epoch_num=15)
+
+
+# In[205]:
+
+
+TrainModel(layers_sizes=[784, 392, 10], activation_f='leakyrelu', batch_size=60, epoch_num=20,
+         l1_reg_coef=1e-5, l2_reg_coef=1e-5)
+
+
+# In[208]:
+
+
+TrainModel(layers_sizes=[784, 392, 196, 10], activation_f='leakyrelu', batch_size=60, epoch_num=10)
+
+
+# Let's test, how the size of the whole network affects the convergence and accuracy:
+
+# In[10]:
+
+
+TrainModel(layers_num=2, activation_f='leakyrelu', l1_reg_coef=1e-5, l2_reg_coef=1e-5)
+
+
+# In[11]:
+
+
+TrainModel(layers_num=3, activation_f='leakyrelu', l1_reg_coef=1e-5, l2_reg_coef=1e-5)
+
+
+# In[12]:
+
+
+TrainModel(layers_num=5, activation_f='leakyrelu', l1_reg_coef=1e-5, l2_reg_coef=1e-5)
+
+
+# In[9]:
+
+
+TrainModel(layers_num=7, activation_f='leakyrelu', l1_reg_coef=1e-5, l2_reg_coef=1e-5)
+
+
+# In[20]:
+
+
+TrainModel(layers_sizes=[784, 784, 784, 784, 784, 784, 784, 784, 784, 10],
+           activation_f='leakyrelu')
+
 
 # ### 4. Autoencoders
 # An autoencoder is an network used for unsupervised learning of efficient codings. The aim of an autoencoder is to learn a representation (encoding) for a set of data, typically for the purpose of dimensionality reduction. Also, this technique can be used to train deep nets.
