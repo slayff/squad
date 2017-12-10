@@ -70,7 +70,7 @@
 # 
 # Where $P$ is a matrix $WX$ with the softmax function being applied.
 
-# In[2]:
+# In[1]:
 
 
 import tensorflow as tf
@@ -102,7 +102,7 @@ for i, s in enumerate(samples):
 
 # Let's now implement simple linear multi-label classifier using `Tensorflow`:
 
-# In[6]:
+# In[2]:
 
 
 def NextBatch(X, Y, batch_size):
@@ -139,7 +139,7 @@ correct_prediction = tf.equal(tf.argmax(y, 1, output_type=tf.int32), y_)
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 
-# In[8]:
+# In[3]:
 
 
 from IPython.display import clear_output
@@ -327,7 +327,7 @@ with tf.Session(graph=g2) as sess:
 # 7. How does quality change with adding layers. Prove your words, train model for 2, 3, 5, 7 and 10 layers.
 # 8. Using backpropagation find optimal  digit 8 for your net.*
 
-# In[19]:
+# In[4]:
 
 
 def TrainModel(
@@ -368,18 +368,18 @@ def TrainModel(
                                               layers_sizes[i - 1],
                                               activation=activation,
                                               kernel_initializer=tf.truncated_normal_initializer(
-                                                  stddev=0.1),
+                                                  stddev=0.2),
                                               bias_initializer=tf.truncated_normal_initializer(
-                                                  stddev=0.1),
+                                                  stddev=0.2),
                                               activity_regularizer=tf.contrib.layers.l1_l2_regularizer(
                                               l1_reg_coef, l2_reg_coef)
                                              ))
         y = tf.layers.dense(layers_list[-1],
                             layers_sizes[-1],
                             kernel_initializer=tf.truncated_normal_initializer(
-                                        stddev=0.1),
-                            bias_initializer=tf.truncated_normal_initializer(
-                                        stddev=0.1),
+                                                  stddev=0.2),
+                                              bias_initializer=tf.truncated_normal_initializer(
+                                                  stddev=0.2),
                             activity_regularizer=tf.contrib.layers.l1_l2_regularizer(
                                         l1_reg_coef, l2_reg_coef)
                            )
@@ -450,36 +450,38 @@ TrainModel(layers_sizes=[784, 392, 196, 10], activation_f='leakyrelu', batch_siz
 
 # Let's test, how the size of the whole network affects the convergence and accuracy:
 
-# In[10]:
+# In[5]:
 
 
 TrainModel(layers_num=2, activation_f='leakyrelu', l1_reg_coef=1e-5, l2_reg_coef=1e-5)
 
 
-# In[11]:
+# In[6]:
 
 
 TrainModel(layers_num=3, activation_f='leakyrelu', l1_reg_coef=1e-5, l2_reg_coef=1e-5)
 
 
-# In[12]:
+# In[7]:
 
 
 TrainModel(layers_num=5, activation_f='leakyrelu', l1_reg_coef=1e-5, l2_reg_coef=1e-5)
 
 
-# In[9]:
+# In[8]:
 
 
 TrainModel(layers_num=7, activation_f='leakyrelu', l1_reg_coef=1e-5, l2_reg_coef=1e-5)
 
 
-# In[20]:
+# In[9]:
 
 
-TrainModel(layers_sizes=[784, 784, 784, 784, 784, 784, 784, 784, 784, 10],
-           activation_f='leakyrelu')
+TrainModel(layers_sizes=[784, 392, 200, 150, 100, 80, 60, 40, 20, 10],
+           activation_f='leakyrelu', epoch_num=5)
 
+
+# It's really strange, why accuracy is almost the same for models with 2 and 10 layers. Any bugs? Need to work out on this. (to be checked...)
 
 # ### 4. Autoencoders
 # An autoencoder is an network used for unsupervised learning of efficient codings. The aim of an autoencoder is to learn a representation (encoding) for a set of data, typically for the purpose of dimensionality reduction. Also, this technique can be used to train deep nets.
@@ -497,3 +499,5 @@ TrainModel(layers_sizes=[784, 784, 784, 784, 784, 784, 784, 784, 784, 10],
 # 2. For each digit plot several samples in 3D axis (use "%matplotlib notebook" mode or plotly). How do digits group?
 # 3. Train autoencoder with more layers. What are results?
 # 4. Use autoencoder to pretrain 2 layers (unsupervised) and then train the following layers with supervised method.
+
+# To be done...
