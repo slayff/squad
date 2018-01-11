@@ -70,7 +70,7 @@
 # 
 # Where $P$ is a matrix $WX$ with the softmax function being applied.
 
-# In[1]:
+# In[ ]:
 
 
 import tensorflow as tf
@@ -102,7 +102,7 @@ for i, s in enumerate(samples):
 
 # Let's now implement simple linear multi-label classifier using `Tensorflow`:
 
-# In[2]:
+# In[ ]:
 
 
 def NextBatch(X, Y, batch_size):
@@ -139,7 +139,7 @@ correct_prediction = tf.equal(tf.argmax(y, 1, output_type=tf.int32), y_)
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 
-# In[3]:
+# In[ ]:
 
 
 from IPython.display import clear_output
@@ -481,10 +481,10 @@ TrainModel(layers_sizes=[784, 392, 200, 150, 100, 80, 60, 40, 20, 10],
            activation_f='leakyrelu', epoch_num=5)
 
 
-# It's really strange, why accuracy is almost the same for models with 2 and 10 layers. Any bugs? Need to work out on this. (to be checked...)
+# An accuracy is almost the same for models with 2 and 10 layers, even though it's a little bit strange. Surely, it decreases when increasing the number of layers, but not so considerably as it could be.
 
 # ### 4. Autoencoders
-# An autoencoder is an network used for unsupervised learning of efficient codings. The aim of an autoencoder is to learn a representation (encoding) for a set of data, typically for the purpose of dimensionality reduction. Also, this technique can be used to train deep nets.
+# An autoencoder is a network used for unsupervised learning of efficient codings. The aim of an autoencoder is to learn a representation (encoding) for a set of data, typically for the purpose of dimensionality reduction. Also, this technique can be used to train deep nets.
 # 
 # Architecturally, the simplest form of an autoencoder is a feedforward net very similar to the multilayer perceptron (MLP), but with the output layer having the same number of nodes as the input layer, and with the purpose of reconstructing its own inputs. Therefore, autoencoders are unsupervised learning models. An autoencoder always consists of two parts, the encoder and the decoder. Encoder returns latent representation of the object (compressed representation, usuallu smaller dimension), but decoder restores object from this latent representation. Autoencoders are also trained to minimise reconstruction errors (e.g. MSE).
 # 
@@ -500,4 +500,322 @@ TrainModel(layers_sizes=[784, 392, 200, 150, 100, 80, 60, 40, 20, 10],
 # 3. Train autoencoder with more layers. What are results?
 # 4. Use autoencoder to pretrain 2 layers (unsupervised) and then train the following layers with supervised method.
 
-# To be done...
+# In[167]:
+
+
+class Autoencoder:
+    def __init__(self, input_dim, epoch=5, learning_rate=0.001):
+        self.graph = tf.Graph()
+        self.epoch = epoch
+        self.input_dim = input_dim
+        self.learning_rate = learning_rate
+        self.layers = []
+        self.activation_dict = {'sigmoid' : tf.sigmoid,
+                                'relu' : tf.nn.relu,
+                                'tanh' : tf.nn.tanh,
+                                'leakyrelu': tf.nn.leaky_relu
+                               }
+    
+    def make_model(self, layers_dim_list, activation_func='leakyrelu',
+                  l1_reg_coef=1e-4, l2_reg_coef=1e-4):
+        with self.graph.as_default(): 
+            activation = self.activation_dict[activation_func]
+            with tf.name_scope('input'):
+                self.x = tf.placeholder(dtype=tf.float32, shape=[None, self.input_dim])
+                self.layers.append(self.x)
+            with tf.name_scope('hidden'):
+                for i, dim in enumerate(layers_dim_list):
+                    new_layer = tf.layers.dense(self.layers[i],
+                                               dim,
+                                               activation=activation,
+                                               kernel_initializer=tf.truncated_normal_initializer(
+                                                      stddev=0.1),
+                                               bias_initializer=tf.truncated_normal_initializer(
+                                                      stddev=0.1),
+                                               activity_regularizer=tf.contrib.layers.l1_l2_regularizer(
+                                                  l1_reg_coef, l2_reg_coef)
+                                               )
+                    self.layers.append(new_layer)
+            with tf.name_scope('output'):
+                new_layer = tf.layers.dense(self.layers[-1],
+                                           self.input_dim,
+                                           activation=activation,
+                                           kernel_initializer=tf.truncated_normal_initializer(
+                                               stddev=0.1),
+                                           bias_initializer=tf.truncated_normal_initializer(
+                                               stddev=0.1),
+                                           )
+                self.layers.append(new_layer)
+                self.decoded = new_layer
+            with tf.name_scope('loss'):
+                self.loss = tf.reduce_mean(tf.square(self.x - self.decoded)) 
+            with tf.name_scope('train'):
+                self.train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
+    
+    def train(self, x_train, y_train, batch_size=60):
+        self.sess = tf.InteractiveSession(graph=self.graph)
+        self.sess.run(tf.global_variables_initializer())
+        iter_num = 0
+        for epoch in range(self.epoch):
+            x_train_, y_train_ = shuffle(x_train, y_train)
+            for x_batch, y_batch in NextBatch(x_train_, y_train_, batch_size):
+                cur_loss, _ = self.sess.run([self.loss, self.train_op], feed_dict={self.x: x_batch})
+                iter_num += 1
+                print('step %d, epoch %d, encoding loss %g' % (iter_num, epoch, cur_loss))
+                clear_output()
+        cur_loss = self.loss.eval(feed_dict={self.x: x_train})
+        print('Encoding loss after %d epochs is %g' % (self.epoch, cur_loss))
+            
+    def get_reconstructed_img(self, img):
+        rec_img = self.sess.run(self.layers[-1], feed_dict={self.x : img})
+        return rec_img
+    
+    def get_encodings(self, data, layer_num=1):
+        encodings = self.sess.run(self.layers[layer_num], feed_dict={self.x : data})
+        return encodings
+    
+    def __del__(self):
+        self.sess.close()
+
+
+# In[108]:
+
+
+INPUT_DIM = 784
+LAYERS_DIMS = [3]
+ae = Autoencoder(INPUT_DIM)
+ae.make_model(LAYERS_DIMS)
+ae.train(x_train, y_train)
+
+
+# Let's plot several images of digits in two versions: original and reconstructed.
+
+# In[103]:
+
+
+SAMPLES_NUM = 5
+samples = np.random.randint(0, x_test.shape[0], SAMPLES_NUM)
+f, ax  = plt.subplots(SAMPLES_NUM, 2)
+f.set_size_inches(10, 10)
+for i in range(SAMPLES_NUM * 2):
+    ax[i // 2, i % 2].axis('off')
+    if i % 2 == 0:
+        ax[i // 2, i % 2].imshow(x_test[samples[i // 2], :].reshape(28, 28), cmap='binary')
+    else:
+        rec_im = ae.get_reconstructed_img([x_test[samples[i // 2]]])
+        ax[i // 2, i % 2].imshow(rec_im.reshape(28, 28), cmap='binary')
+
+
+# And we also want to understand that same digits are encoded relatively closely to each other. To do that, we'll show a 3D-plot of encoded images.
+
+# In[ ]:
+
+
+from plotly.offline import download_plotlyjs, init_notebook_mode, plot,iplot
+import plotly.graph_objs as go
+init_notebook_mode(connected=True)
+
+
+# In[130]:
+
+
+encodings = ae.get_encodings(x_test)
+digits_3d = pd.DataFrame(
+                data=np.column_stack([y_test, encodings]),
+                columns=['label', 'x', 'y', 'z'])
+data = []
+for i in range(10):
+    x = digits_3d[digits_3d['label'] == i]['x']
+    y = digits_3d[digits_3d['label'] == i]['y']
+    z = digits_3d[digits_3d['label'] == i]['z']
+    trace = {
+        'name': str(i),
+        'x': x,
+        'y': y,
+        'z': z,
+        'type': 'scatter3d',
+        'mode': 'markers',
+        'marker': {
+            'size': 4
+        }
+    }
+    data.append(trace)
+    
+layout = go.Layout(
+    title='MNIST',
+    width=800,
+    height=600
+)
+
+fig = go.Figure(data=data, layout=layout)
+
+iplot(fig, show_link = False)
+
+
+# Plain image so as to be able to see it on github:
+# <img src="newplot-3.png",width=400,height=200>
+
+# In[131]:
+
+
+del ae
+
+
+# Now we'll try to add more layers to our autoencoder and compare results. We'll use 2 layers for both: encoding and decoding.
+
+# In[172]:
+
+
+ae = Autoencoder(INPUT_DIM)
+LAYERS_DIMS = [300, 3, 300]
+ae.make_model(LAYERS_DIMS)
+ae.train(x_train, y_train)
+
+
+# As we can see, the loss is a little bit smaller, when using extra layer.
+# 
+# Let's plot images again:
+
+# In[174]:
+
+
+f, ax  = plt.subplots(SAMPLES_NUM, 2)
+f.set_size_inches(10, 10)
+for i in range(SAMPLES_NUM * 2):
+    ax[i // 2, i % 2].axis('off')
+    if i % 2 == 0:
+        ax[i // 2, i % 2].imshow(x_test[samples[i // 2], :].reshape(28, 28), cmap='binary')
+    else:
+        rec_im = ae.get_reconstructed_img([x_test[samples[i // 2]]])
+        ax[i // 2, i % 2].imshow(rec_im.reshape(28, 28), cmap='binary')
+
+
+# Looks much nicer this time, doesn't it?
+
+# In[175]:
+
+
+encodings = ae.get_encodings(x_test, layer_num=2)
+digits_3d = pd.DataFrame(
+                data=np.column_stack([y_test, encodings]),
+                columns=['label', 'x', 'y', 'z'])
+data = []
+for i in range(10):
+    x = digits_3d[digits_3d['label'] == i]['x']
+    y = digits_3d[digits_3d['label'] == i]['y']
+    z = digits_3d[digits_3d['label'] == i]['z']
+    trace = {
+        'name': str(i),
+        'x': x,
+        'y': y,
+        'z': z,
+        'type': 'scatter3d',
+        'mode': 'markers',
+        'marker': {
+            'size': 4
+        }
+    }
+    data.append(trace)
+    
+layout = go.Layout(
+    title='MNIST visualization',
+    width=800,
+    height=600
+)
+
+fig = go.Figure(data=data, layout=layout)
+
+iplot(fig, show_link = False)
+
+
+# Plain image so as to be able to see it on github:
+# <img src="newplot-4.png",width=500,height=300>
+
+# This time same digits are located much closer to each other so that they form some sort of clouds.
+
+# In[140]:
+
+
+del ae
+
+
+# In[164]:
+
+
+def encoded_classification(x_train,
+                           y_train,
+                           x_test,
+                           y_test,
+                           encoder_layers_dims,
+                           nn_layers_dims,
+                           epoch_num=10,
+                           batch_size=60,
+                           activation=tf.nn.leaky_relu,
+                           l1_reg_coef=1e-3,
+                           l2_reg_coef=1e-3):
+    ae = Autoencoder(INPUT_DIM, epoch=epoch_num)
+    ae.make_model(encoder_layers_dims)
+    ae.train(x_train, y_train)
+    x_train_encoded = ae.get_encodings(x_train, layer_num=len(encoder_layers_dims) // 2 + 1)
+    x_test_encoded = ae.get_encodings(x_test, layer_num=len(encoder_layers_dims) // 2 + 1)
+    del ae
+    
+    g = tf.Graph()
+    with g.as_default():
+        x = tf.placeholder(tf.float32, shape=[None, nn_layers_dims[0]])
+        y_ = tf.placeholder(tf.int32, shape=[None])
+        layers_list = [x]
+        for i in range(1, len(nn_layers_dims) + 1):
+            layers_list.append(tf.layers.dense(layers_list[i - 1],
+                                               nn_layers_dims[i - 1],
+                                               activation=activation,
+                                               kernel_initializer=tf.truncated_normal_initializer(
+                                                      stddev=0.2),
+                                               bias_initializer=tf.truncated_normal_initializer(
+                                                      stddev=0.2),
+                                               activity_regularizer=tf.contrib.layers.l1_l2_regularizer(
+                                                  l1_reg_coef, l2_reg_coef)
+                                              )
+                              )
+        y = tf.layers.dense(layers_list[-1],
+                            nn_layers_dims[-1],
+                            kernel_initializer=tf.truncated_normal_initializer(
+                                                  stddev=0.2),
+                            bias_initializer=tf.truncated_normal_initializer(
+                                                  stddev=0.2),
+                            activity_regularizer=tf.contrib.layers.l1_l2_regularizer(
+                                        l1_reg_coef, l2_reg_coef)
+                           )
+        cross_entropy = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y_,
+                                                                                      logits=y))
+        train_step = tf.train.AdamOptimizer().minimize(cross_entropy)
+        correct_prediction = tf.equal(tf.argmax(y, 1, output_type=tf.int32), y_)
+        accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    with tf.Session(graph=g) as sess:
+        sess.run(tf.global_variables_initializer())
+        iter_num = 0
+        for epoch in range(epoch_num):
+            # x_train_, y_train_ = shuffle(x_train, y_train)
+            for x_batch, y_batch in NextBatch(x_train_encoded, y_train, batch_size):
+                train_step.run(feed_dict={x: x_batch, y_: y_batch})
+                iter_num += 1
+                train_accuracy = accuracy.eval(feed_dict={x: x_batch, y_: y_batch})
+                print('step %d, epoch %d, training accuracy %g' % (iter_num, epoch, train_accuracy))
+                clear_output()
+        print('Layers are used for pretraining encoder:',
+              [INPUT_DIM] + encoder_layers_dims + [INPUT_DIM])
+        print('Layers are used for training classifier:', nn_layers_dims)
+        print('accuracy on train %g' % accuracy.eval(feed_dict={x: x_train_encoded, y_: y_train}))
+        print('accuracy on test %g' % accuracy.eval(feed_dict={x: x_test_encoded, y_: y_test}))
+
+
+# In[165]:
+
+
+ENCODER_LAYERS_DIMS = [500, 300, 500]
+NN_LAYERS_DIMS = [300, 150, 10]
+encoded_classification(x_train, y_train, x_test, y_test, ENCODER_LAYERS_DIMS, NN_LAYERS_DIMS,
+                      epoch_num=20)
+
+
+# We see no dramatic changes in accuracy even when using autoencoder to compress images.
