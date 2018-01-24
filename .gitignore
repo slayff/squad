@@ -2,4 +2,4 @@
 .ipynb_checkpoints/
 *.csv
 /labs/logs_tensorboard
-./labs/char_dataset
+/labs/char_dataset
