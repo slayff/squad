@@ -3,3 +3,4 @@
 *.csv
 /labs/logs_tensorboard
 /labs/char_dataset
+/temp_project
