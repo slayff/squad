@@ -63,7 +63,6 @@ class DRQA:
                 self.end_score = end_biattn_layer.score
 
         with tf.variable_scope('Probabilities'):
-            #mask = tf.cast(tf.logical_not(self.c_mask), tf.float32)
             mask = tf.cast(self.c_mask, tf.float32)
             self.start_probs = tf.multiply(tf.nn.softmax(self.start_score), mask)
             self.end_probs = tf.multiply(tf.nn.softmax(self.end_score), mask)
@@ -97,6 +96,13 @@ class DRQA:
                     if span_prob > best_prob:
                         best_prob = span_prob
                         best_span = (start, end)
+            if best_span == (None, None):
+                print('Warning, cannot find best span:')
+                print('Start probabilities:')
+                print(start_probs)
+                print('End probabilities:')
+                print(end_probs)
+                return 0, 0
             return best_span
 
         text = batch[-2]
@@ -131,7 +137,7 @@ class DRQA:
         ops = [self.train_step, self.loss, self.start_probs, self.end_probs]
         tr_op, loss, start_probs, end_probs = sess.run(ops, feed_dict=feed_dict)
 
-        predictions, y_true = self.predict(batch, start_probs, end_probs, batch[7], batch[8])
+        predictions, y_true = self.predict(batch, start_probs, end_probs, batch[7],batch[8])
         return tr_op, loss, predictions, y_true
 
     def test(self, batch, sess):
