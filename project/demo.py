@@ -100,12 +100,12 @@ def main():
         model = DRQA(options, embeddings)
         log.info('Graph loaded')
 
-        save_path = tf.train.latest_checkpoint(options['path'])
+        #save_path = tf.train.latest_checkpoint(options['path'])
         saver = tf.train.Saver()
 
         with tf.Session() as sess:
 
-            saver.restore(sess, save_path)
+            saver.restore(sess, options['model_path'])
 
             while True:
                 try:
