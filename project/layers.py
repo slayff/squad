@@ -32,7 +32,8 @@ class StackedBRNN:
 
             self.concatenated_outputs = tf.concat(outputs, 2)
 
-        self._output = tf.nn.dropout(self.concatenated_outputs, keep_prob=self.dropout_rate)
+        #self._output = tf.nn.dropout(self.concatenated_outputs, keep_prob=self.dropout_rate)
+        self._output = self.concatenated_outputs
 
     @property
     def output(self):
@@ -55,7 +56,7 @@ class BilinearAttention:
             xyW = tf.matmul(x, yW_asmatrix)
 
             self.xyW_vectorized = tf.squeeze(xyW, 2)
-            self.mask = tf.cast(tf.logical_not(x_mask), tf.float32)
+            self.mask = tf.cast(x_mask, tf.float32)
 
             self._score = tf.multiply(self.xyW_vectorized, self.mask)
 
@@ -77,7 +78,7 @@ class QuestionAttention:
             flattened_x = tf.reshape(x, (-1, enc_dim))
             intermediate_score = tf.reshape(tf.matmul(flattened_x, W), (-1, item_len))
 
-            mask = tf.cast(tf.logical_not(x_mask), tf.float32)
+            mask = tf.cast(x_mask, tf.float32)
 
             intermediate_score = tf.multiply(intermediate_score, mask)
 
