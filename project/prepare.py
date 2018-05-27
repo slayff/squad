@@ -14,6 +14,14 @@ from tqdm import tqdm
 
 wv_dim = 300
 
+def str2bool(v):
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
 def normalize_text(text):
     return unicodedata.normalize('NFD', text)
 
@@ -99,14 +107,8 @@ def build_embedding(embed_file, targ_vocab, dim_vec):
                 emb[w2id[token]] = [float(v) for v in elems[-wv_dim:]]
     return emb
 
-def main():
-    parser = argparse.ArgumentParser(description='Preprocessing data files')
-    parser.add_argument('--embeddings', default='', help='Path to glove embeddings file')
-    args = parser.parse_args()
 
-    logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG, datefmt='%m/%d/%Y %I:%M:%S')
-    log = logging.getLogger(__name__)
-
+def preprocess(log, args):
     extra_dir = './extra_data/'
     if not os.path.exists(extra_dir):
         os.makedirs(extra_dir, exist_ok=True)
@@ -250,6 +252,49 @@ def main():
         msgpack.dump(result, f)
 
     log.info('Processing completed')
+
+
+def download_data(log, args):
+    log.info('Downloading preprocessed data')
+    extra_data_link = 'https://www.dropbox.com/sh/th0f5ha1vgy7xlf/AAAXkI8wUAcUDxLhikaMlqKua?dl=1'
+    urllib.request.urlretrieve(extra_data_link, './extra_data.zip')
+    os.system("unzip extra_data.zip -d ./extra_data/")
+    os.system("rm extra_data.zip")
+
+    if args.load_embed:
+        log.info('Downloading glove embeddings (~2Gb)')
+        glove_840B = 'http://nlp.stanford.edu/data/glove.840B.300d.zip'
+        urllib.request.urlretrieve(glove_840B, './extra_dir/glove.zip')
+        log.info('Embeddings loaded, unzipping')
+        os.system("unzip extra_data/folder.zip -d ./extra_data/")
+        log.info('Successfully unzipped')
+
+    log.info('Extra data loaded')
+
+    log.info('Downloading model weights')
+    model_weight_link = 'https://www.dropbox.com/sh/inftfkkhetyqcna/AACmk_qNpbCqncGG_e-njvwna?dl=1'
+    urllib.request.urlretrieve(model_weight_link, './model.zip')
+    os.system("unzip model.zip -d ./model/")
+    os.system("rm model.zip")
+
+def main():
+    parser = argparse.ArgumentParser(description='Preprocessing data files')
+    parser.add_argument('--embeddings', default='', help='Path to glove embeddings file')
+    parser.register('type', 'bool', str2bool)
+    parser.add_argument('--load_embed', type='bool', default=False)
+    parser.add_argument('--preprocess', type='bool', default=False)
+    args = parser.parse_args()
+
+    logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG, datefmt='%m/%d/%Y %I:%M:%S')
+    log = logging.getLogger(__name__)
+
+    if args.preprocess:
+        preprocess(log, args)
+        return
+    else:
+        download_data(log, args)
+        return
+
 
 if __name__ == '__main__':
     main()
