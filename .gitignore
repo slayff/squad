@@ -1,0 +1,6 @@
+# ignore jupyter checkpoints directory
+.ipynb_checkpoints/
+*.csv
+/labs/logs_tensorboard
+/labs/char_dataset
+/temp_project
