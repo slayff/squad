@@ -31,7 +31,6 @@ def get_data(context, question, nlp, meta, w2id):
     match_origin = [w.text in question_word for w in context_doc]
     match_lower = [w.text.lower() in question_lower for w in context_doc]
     match_lemma = [(w.lemma_ if w.lemma_ != '-PRON-' else w.text.lower()) in question_lemma for w in context_doc]
-    context_features = list(zip(match_origin, match_lower, match_lemma))
 
     unk_id = 1
     question_ids = [w2id.get(w, unk_id) for w in question_tokens]
@@ -40,7 +39,7 @@ def get_data(context, question, nlp, meta, w2id):
     counter_ = Counter(w.lower() for w in context_tokens)
     total = sum(counter_.values())
     context_tf = [counter_[w.lower()] / total for w in context_tokens]
-    context_features = context_features + [context_tf]
+    context_features = list(zip(match_origin, match_lower, match_lemma, context_tf))
 
     vocab_tag = meta['vocab_tag']
     vocab_ent = meta['vocab_ent']
@@ -56,12 +55,13 @@ def get_data(context, question, nlp, meta, w2id):
 
 def main():
     parser = argparse.ArgumentParser(description='Demo')
-    parser.add_argument('--path', default='./best_checkpoints/', help='Path to model weights (tf checkpoint)')
+    parser.add_argument('--model_path', default='./model/best_check-2329', help='Full path to model weights (tf checkpoint)')
+    parser.add_argument('--layers_num', type=int, default=3)
     args = parser.parse_args()
 
     options = vars(args)
 
-    with open('extra_data/meta.msgpack', 'rb') as f:
+    with open('extra_data/demo_meta.msgpack', 'rb') as f:
         meta = msgpack.load(f, encoding='utf8')
 
     vocab = meta['vocab']
@@ -72,7 +72,6 @@ def main():
     extra_options = {
         'grad_clipping': 10.0,
         'learning_rate': 0.01,
-        'layers_num': 2,
         'hidden_size': 128,
         'dropout_rate': 0.7,
         'extra_data': './extra_data/',

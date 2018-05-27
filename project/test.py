@@ -9,8 +9,9 @@ from train import batch_generator, Score, load_data
 def main():
     parser = argparse.ArgumentParser(description='Test model')
     parser.add_argument('-bs', '--batch_size', type=int, default=128)
-    parser.add_argument('--path', default='./best_checkpoints/', help='Path to model weights (tf checkpoint)')
+    parser.add_argument('--model_path', default='./model/best_check-2329', help='Path to model weights (tf checkpoint)')
     parser.add_argument('--verbosity', type=int, default=0, help='set 1 to show 10 samples')
+    parser.add_argument('--layers_num', type=int, default=3)
     args = parser.parse_args()
 
     options = vars(args)
@@ -18,7 +19,6 @@ def main():
     extra_options = {
         'grad_clipping': 10.0,
         'learning_rate': 0.01,
-        'layers_num': 2,
         'hidden_size': 128,
         'dropout_rate': 0.7,
         'extra_data': './extra_data/',
@@ -49,12 +49,12 @@ def main():
         model = DRQA(options, embeddings)
         log.info('Graph loaded')
 
-        save_path = tf.train.latest_checkpoint(options['path'])
+        # save_path = tf.train.latest_checkpoint(options['path'])
         saver = tf.train.Saver()
 
         with tf.Session() as sess:
 
-            saver.restore(sess, save_path)
+            saver.restore(sess, options['model_path'])
 
             log.info('Validation in process...')
             predictions = []
