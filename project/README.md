@@ -9,9 +9,9 @@ The main goal of the project is to make a model, which is able to "read" the par
 
 ## Usage:
 0. Install python3 (version >= 3.5), wget, unzip via `apt-get` or `brew`
-1. Install additional libraries via `pip3 install -r requirements.txt`
+1. Install additional libraries via `pip3 install -r requirements.txt`. Please download english language spaCy model via `python3 -m spacy download en`.
 2. In order to use preprocessed data run `python3 prepare.py`. The script will download ~1.2Gb of data. If you want to download glove embeddings and generate essential data yourself run `python3 prepare.py --preprocess yes`. Warning: estimated time ~1 hour (time consuming lemmatization). `--embeddings` arg allows to provide path to [downloaded](https://nlp.stanford.edu/projects/glove/) and unarchived embeddings (840B, 300d).
-3 (Optional). Train model via `python3 train.py`. In order to change some hyperparameters refer to help: `python3 train.py -h`.
+3. (Optional) Train model via `python3 train.py`. In order to change some hyperparameters refer to help: `python3 train.py -h`.
 4. In order to evaluate F1 score on test dataset, use `python3 test.py`
 5. In order to turn on an interactive mode, use `python3 demo.py`
 
